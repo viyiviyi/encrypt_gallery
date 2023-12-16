@@ -89,18 +89,21 @@ class _ImageListState extends State<ImageList> {
           ),
         ],
       ),
-      body: GridView.count(
-        crossAxisCount: wCount.toInt(),
-        children: List.generate(
-          imagePaths.length,
-          (index) => Container(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Center(
-              child: ServerImage(
-                path: imagePaths[index],
-                pwd: widget.pwd,
-                height: h / 2,
-                fit: BoxFit.fitHeight,
+      body: Container(
+        padding: const EdgeInsets.only(bottom: 20, top: 10),
+        child: GridView.count(
+          crossAxisCount: wCount.toInt(),
+          children: List.generate(
+            imagePaths.length,
+            (index) => Container(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Center(
+                child: ServerImage(
+                  path: imagePaths[index],
+                  pwd: widget.pwd,
+                  height: h / 2,
+                  fit: BoxFit.fitHeight,
+                ),
               ),
             ),
           ),

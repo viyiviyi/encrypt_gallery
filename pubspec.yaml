@@ -61,6 +61,9 @@ dependencies:
   permission_handler: ^11.0.1
   icons_launcher: ^2.1.0
 
+flutter_app_name:
+  name: "相册"
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
