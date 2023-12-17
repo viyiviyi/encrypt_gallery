@@ -1,8 +1,7 @@
 import 'dart:io';
 
-import 'package:encrypt_gallery/model/dirs_model.dart';
+import 'package:encrypt_gallery/core/hive_box.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'Widgets/gallery.dart';
@@ -17,11 +16,10 @@ Future<bool> _checkPermission() async {
   return false;
 }
 
-_initApp() async {
-  await _checkPermission();
+Future _initApp() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Hive.initFlutter('encrypt_gallery');
-  Hive.registerAdapter(ImageDirAdapter());
+  await _checkPermission();
+  initHive();
 }
 
 void main() {

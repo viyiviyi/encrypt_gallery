@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:encrypt_gallery/core/core.dart';
+import 'package:encrypt_gallery/core/hive_box.dart';
 import 'package:hive/hive.dart';
 
 class ImageDir {
@@ -46,7 +47,7 @@ Future<Box<ImageDir>>? _imageDirDb;
 
 Future<Box<ImageDir>> getBox() {
   if (_imageDirDb != null) return _imageDirDb!;
-  _imageDirDb = Hive.openBox<ImageDir>('ImageDirs');
+  _imageDirDb = initHive().then((value) => Hive.openBox<ImageDir>('ImageDirs'));
   return _imageDirDb!;
 }
 
