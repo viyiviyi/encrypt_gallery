@@ -1,4 +1,4 @@
-package com.example.encrypt_gallery
+package com.yiyiooo.encrypt_gallery
 
 import io.flutter.embedding.android.FlutterActivity
 
