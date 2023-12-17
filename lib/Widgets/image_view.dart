@@ -132,8 +132,8 @@ class _ImageViewState extends State<ImageView> {
                               child: const Text('确认'),
                               onPressed: () {
                                 File(widget.path).delete().then((value) {
-                                  Navigator.of(context).pop(null);
-                                  Navigator.of(context).pop(null);
+                                  Navigator.of(context).pop(widget.path);
+                                  Navigator.of(context).pop(widget.path);
                                 });
                               },
                             ),

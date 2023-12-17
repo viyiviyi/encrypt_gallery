@@ -7,7 +7,7 @@ import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-class ServerImage extends StatefulWidget {
+class ImageItem extends StatefulWidget {
   final String path;
   final String pwd;
   final double? width;
@@ -26,7 +26,7 @@ class ServerImage extends StatefulWidget {
   final int? cacheHeight;
   final Function()? onLongPress;
   final Function()? onTap;
-  ServerImage(
+  ImageItem(
       {required this.path,
       required this.pwd,
       this.width,
@@ -47,10 +47,10 @@ class ServerImage extends StatefulWidget {
       this.onLongPress});
 
   @override
-  _ServerImageState createState() => _ServerImageState();
+  _ImageItemState createState() => _ImageItemState();
 }
 
-class _ServerImageState extends State<ServerImage> {
+class _ImageItemState extends State<ImageItem> {
   Image loading = Image.asset('images/load_image.png');
   Image? _image;
 
@@ -58,8 +58,9 @@ class _ServerImageState extends State<ServerImage> {
 
   Future initImage() async {
     var cachePath = await getTempDir();
-    var cacheName = getSha256(widget.path);
+    var cacheName = getSha256(widget.path + widget.pwd);
     var imgFile = File('${cachePath.absolute.path}/$cacheName');
+
     fileName =
         widget.path.substring(widget.path.lastIndexOf(RegExp(r'/|\\')) + 1);
     if (imgFile.existsSync()) {
@@ -76,7 +77,7 @@ class _ServerImageState extends State<ServerImage> {
       }
     }
     var image = await compute(
-        loadImageUnit8List,
+        loadImageProvider,
         LoadArg(
             path: widget.path,
             pwd: widget.pwd,

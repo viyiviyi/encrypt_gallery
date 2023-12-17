@@ -16,10 +16,10 @@ var _encodeIng = false;
 
 class ImageList extends StatefulWidget {
   late String pathName;
-  final String path;
-  final String pwd;
-  ImageList(this.path, {Key? key, required this.pwd}) : super(key: key) {
-    pathName = path.substring(path.lastIndexOf(RegExp(r'/|\\')) + 1);
+  final ImageDir imageDir;
+  ImageList(this.imageDir, {Key? key}) : super(key: key) {
+    pathName = imageDir.rootPath
+        .substring(imageDir.rootPath.lastIndexOf(RegExp(r'/|\\')) + 1);
   }
 
   @override
@@ -30,7 +30,7 @@ class _ImageListState extends State<ImageList> {
   var imagePaths = <String>[];
   Future loadImages() async {
     imagePaths = [];
-    var dir = Directory(widget.path);
+    var dir = Directory(widget.imageDir.rootPath);
     if (await dir.exists()) {
       for (var value in dir.listSync()) {
         if (RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(value.path)) {
@@ -53,8 +53,8 @@ class _ImageListState extends State<ImageList> {
     compute(
         dencryptAllImage,
         LoadArg(
-          path: widget.path,
-          pwd: widget.pwd,
+          path: widget.imageDir.rootPath,
+          pwd: widget.imageDir.psw,
         )).then((value) {
       setState(() {
         _dencodeIng = false;
@@ -69,8 +69,8 @@ class _ImageListState extends State<ImageList> {
     compute(
         encryptAllImage,
         LoadArg(
-          path: widget.path,
-          pwd: widget.pwd,
+          path: widget.imageDir.rootPath,
+          pwd: widget.imageDir.psw,
         )).then((value) {
       setState(() {
         _encodeIng = false;
@@ -102,17 +102,17 @@ class _ImageListState extends State<ImageList> {
                   dencodeAll();
                   break;
                 case '2':
-                  deleteImageDir(widget.path);
+                  deleteImageDir(widget.imageDir);
                   Navigator.pop(context);
                   break;
                 case '3':
                   final openDirPlugin = OpenDir();
-                  openDirPlugin.openNativeDir(path: widget.path);
+                  openDirPlugin.openNativeDir(path: widget.imageDir.rootPath);
                   break;
                 case '4':
                   final openDirPlugin = OpenDir();
                   openDirPlugin.openNativeDir(
-                      path: '${widget.path}/dencrypt_output');
+                      path: '${widget.imageDir.rootPath}/dencrypt_output');
                   break;
                 case '5':
                   if (_encodeIng) return;
@@ -121,7 +121,7 @@ class _ImageListState extends State<ImageList> {
                 case '6':
                   final openDirPlugin = OpenDir();
                   openDirPlugin.openNativeDir(
-                      path: '${widget.path}/encrypt_output');
+                      path: '${widget.imageDir.rootPath}/encrypt_output');
                   break;
                 default:
               }
@@ -172,9 +172,9 @@ class _ImageListState extends State<ImageList> {
                 (path) => Container(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Center(
-                    child: ServerImage(
+                    child: ImageItem(
                       path: path,
-                      pwd: widget.pwd,
+                      pwd: widget.imageDir.psw,
                       height: h / 2,
                       fit: BoxFit.fitHeight,
                       onTap: () => {
@@ -182,8 +182,16 @@ class _ImageListState extends State<ImageList> {
                             context,
                             ImageView(
                               path: path,
-                              psw: widget.pwd,
-                            )).then((value) => loadImages())
+                              psw: widget.imageDir.psw,
+                            )).then((value) {
+                          if (value != null) {
+                            setState(() {
+                              imagePaths = imagePaths
+                                  .where((path) => path != value)
+                                  .toList();
+                            });
+                          }
+                        })
                       },
                     ),
                   ),

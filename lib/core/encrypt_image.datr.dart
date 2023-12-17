@@ -12,9 +12,27 @@ class LoadArg {
   LoadArg({required this.path, required this.pwd, this.cachePath});
 }
 
-ImageProvider? loadImageUnit8List(LoadArg config) {
+ImageProvider? loadImageProvider(LoadArg config) {
+  var image = loadImage(config);
+  if (image == null) {
+    return null;
+  }
+  // 保存缩列图
+  if (config.cachePath != null && config.cachePath != '') {
+    var thumbnail = img.copyResize(image, width: 200);
+    var cacheName = getSha256(config.path);
+    var imgFile = File('${config.cachePath}/$cacheName');
+    imgFile.writeAsBytesSync(img.encodePng(thumbnail));
+  }
+  return MemoryImage(img.encodePng(image));
+}
+
+img.Image? loadImage(LoadArg config) {
   var file = File(config.path);
   if (!file.existsSync()) {
+    if (kDebugMode) {
+      print('文件 ${config.path} 不存在');
+    }
     return null;
   }
   // dencrypt_output 是解密后的文件保存目录
@@ -24,25 +42,25 @@ ImageProvider? loadImageUnit8List(LoadArg config) {
   var eFile = File('$dir/dencrypt_output/$fileName');
 
   if (eFile.existsSync()) {
-    return FileImage(eFile);
+    return img.decodeImage(eFile.readAsBytesSync());
   }
 
   var image = img.decodeImage(file.readAsBytesSync());
   if (image == null) {
+    if (kDebugMode) {
+      print('文件 ${config.path} 读取失败');
+    }
     return null;
   }
   var startTime = DateTime.now();
   image = dencryptImage(image, config.pwd) ?? image;
-  // 保存缩列图
-  if (config.cachePath != null && config.cachePath != '') {
-    var thumbnail = img.copyResize(image, width: 200);
-    var cacheName = getSha256(config.path);
-    var imgFile = File('${config.cachePath}/$cacheName');
-    imgFile.writeAsBytesSync(img.encodePng(thumbnail));
-  }
   if (kDebugMode) {
     print('encrypt: ${DateTime.now().difference(startTime).inMilliseconds}');
   }
+  return image;
+}
+
+ImageProvider imageToImageProvider(img.Image image) {
   return MemoryImage(img.encodePng(image));
 }
 
@@ -88,35 +106,4 @@ void encryptAllImage(LoadArg config) {
     if (image == null) continue; // 表示不需要解密
     File(outputPath).writeAsBytesSync(img.encodePng(image));
   }
-}
-
-img.Image? loadImage(LoadArg config) {
-  var file = File(config.path);
-  if (!file.existsSync()) {
-    return null;
-  }
-  // dencrypt_output 是解密后的文件保存目录
-  var lIdx = config.path.lastIndexOf(RegExp(r'/|\\'));
-  var fileName = config.path.substring(lIdx + 1);
-  var dir = config.path.substring(0, lIdx);
-  var eFile = File('$dir/dencrypt_output/$fileName');
-
-  if (eFile.existsSync()) {
-    return img.decodeImage(eFile.readAsBytesSync());
-  }
-
-  var image = img.decodeImage(file.readAsBytesSync());
-  if (image == null) {
-    return null;
-  }
-  var startTime = DateTime.now();
-  image = dencryptImage(image, config.pwd);
-  if (kDebugMode) {
-    print('encrypt: ${DateTime.now().difference(startTime).inMilliseconds}');
-  }
-  return image;
-}
-
-ImageProvider imageToImageProvider(img.Image image) {
-  return MemoryImage(img.encodePng(image));
 }

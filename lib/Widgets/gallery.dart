@@ -78,7 +78,7 @@ class _GalleryState extends State<Gallery> {
             ...dirs.map((dir) {
               return GestureDetector(
                 onTap: () {
-                  navigatorPage(context, ImageList(dir.rootPath, pwd: dir.psw))
+                  navigatorPage(context, ImageList(dir))
                       .then((value) => initDirs());
                 },
                 child: Container(
