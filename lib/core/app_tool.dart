@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:encrypt_gallery/core/consts.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 Future<dynamic> navigatorPage(BuildContext context, StatefulWidget page) {
   return Navigator.of(context)
@@ -14,4 +18,14 @@ int? toInt(dynamic input) {
   } catch (e) {
     return 0;
   }
+}
+
+Future<Directory> getTempDir() async {
+  return getTemporaryDirectory().then((tempDir) {
+    var dir = Directory('${tempDir.path}/$cachePathName');
+    if (!dir.existsSync()) {
+      dir.createSync();
+    }
+    return dir;
+  });
 }

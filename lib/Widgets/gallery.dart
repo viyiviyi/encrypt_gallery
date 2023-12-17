@@ -75,15 +75,29 @@ class _GalleryState extends State<Gallery> {
         child: Wrap(
           children: [
             ...dirs.map((dir) {
-              return Container(
-                padding: const EdgeInsets.all(10),
-                // width: 300,
-                child: GestureDetector(
-                  onTap: () {
-                    navigatorPage(
-                            context, ImageList(dir.rootPath, pwd: dir.psw))
-                        .then((value) => initDirs());
-                  },
+              return GestureDetector(
+                onTap: () {
+                  navigatorPage(context, ImageList(dir.rootPath, pwd: dir.psw))
+                      .then((value) => initDirs());
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black87.withOpacity(.3),
+                    borderRadius: const BorderRadius.all(
+                        Radius.circular(10)), // 设置圆角半径为10
+                    boxShadow: [
+                      BoxShadow(
+                        // 添加阴影效果
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 5, // 阴影扩散程度，值越大阴影越大，值为0时没有阴影效果
+                        blurRadius: 7, // 阴影模糊程度，值越大阴影越模糊，值为0时没有阴影效果
+                        offset: const Offset(0, 3), // 阴影偏移量，x正数向右偏移，y正数向下偏移
+                      ),
+                    ],
+                  ),
+                  // width: 300,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -95,14 +109,28 @@ class _GalleryState extends State<Gallery> {
                         '解密输出目录：${dir.rootPath}/dencrypt_output',
                         style: const TextStyle(color: Colors.white54),
                       ),
-                      const SizedBox(
-                        height: 15,
-                      ),
                     ],
                   ),
                 ),
               );
             }).toList(),
+          ],
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            const DrawerHeader(
+              child: Text('使用帮助'),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('这是一个与另外一个sd插件配套的软件，用于预览和解密被加密的png图片。'),
+                TextButton(onPressed: () {}, child: const Text('查看项目')),
+                const Text(''),
+              ],
+            )
           ],
         ),
       ),

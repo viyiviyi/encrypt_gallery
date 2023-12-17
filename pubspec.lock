@@ -163,6 +163,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.1"
+  loading_animation_widget:
+    dependency: "direct main"
+    description:
+      name: loading_animation_widget
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.2.0+4"
   matcher:
     dependency: transitive
     description:
@@ -184,6 +191,41 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.8.0"
+  open_dir:
+    dependency: "direct main"
+    description:
+      name: open_dir
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.1+5"
+  open_dir_linux:
+    dependency: transitive
+    description:
+      name: open_dir_linux
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.1+2"
+  open_dir_macos:
+    dependency: transitive
+    description:
+      name: open_dir_macos
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.1+2"
+  open_dir_platform_interface:
+    dependency: transitive
+    description:
+      name: open_dir_platform_interface
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.1+2"
+  open_dir_windows:
+    dependency: transitive
+    description:
+      name: open_dir_windows
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.1+2"
   path:
     dependency: transitive
     description:

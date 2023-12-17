@@ -19,7 +19,8 @@ Future<bool> _checkPermission() async {
 
 _initApp() async {
   await _checkPermission();
-  await Hive.initFlutter();
+  WidgetsFlutterBinding.ensureInitialized();
+  Hive.initFlutter('encrypt_gallery');
   Hive.registerAdapter(ImageDirAdapter());
 }
 

@@ -6,6 +6,13 @@ import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:open_dir/open_dir.dart';
+
+import '../core/app_tool.dart';
+import 'image_view.dart';
+
+var _dencodeIng = false;
+var _encodeIng = false;
 
 class ImageList extends StatefulWidget {
   late String pathName;
@@ -21,8 +28,8 @@ class ImageList extends StatefulWidget {
 
 class _ImageListState extends State<ImageList> {
   var imagePaths = <String>[];
-  var dencodeIng = false;
-  Future loadImage() async {
+  Future loadImages() async {
+    imagePaths = [];
     var dir = Directory(widget.path);
     if (await dir.exists()) {
       for (var value in dir.listSync()) {
@@ -34,27 +41,47 @@ class _ImageListState extends State<ImageList> {
         }
       }
     }
-    setState(() {});
+    setState(() {
+      imagePaths = [...imagePaths];
+    });
   }
 
   void dencodeAll() {
     setState(() {
-      dencodeIng = true;
+      _dencodeIng = true;
     });
-    compute(dencryptAllImage,
-            LoadArg(path: widget.path, pwd: widget.pwd, cachePath: ''))
-        .then((value) {
+    compute(
+        dencryptAllImage,
+        LoadArg(
+          path: widget.path,
+          pwd: widget.pwd,
+        )).then((value) {
       setState(() {
-        dencodeIng = false;
+        _dencodeIng = false;
+      });
+    });
+  }
+
+  void encodeAll() {
+    setState(() {
+      _encodeIng = true;
+    });
+    compute(
+        encryptAllImage,
+        LoadArg(
+          path: widget.path,
+          pwd: widget.pwd,
+        )).then((value) {
+      setState(() {
+        _encodeIng = false;
       });
     });
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    loadImage();
+    loadImages();
   }
 
   @override
@@ -62,51 +89,107 @@ class _ImageListState extends State<ImageList> {
     var w = MediaQuery.of(context).size.width;
     var h = MediaQuery.of(context).size.height;
     var wCount = w / min((200 + 20), w / 2);
+    var len = imagePaths.length;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.pathName),
         actions: [
           PopupMenuButton<String>(
             onSelected: (String value) {
-              if (value == '1') {
-                if (dencodeIng) return;
-                dencodeAll();
-              } else if (value == '2') {
-                deleteImageDir(widget.path);
-                Navigator.pop(context);
+              switch (value) {
+                case '1':
+                  if (_dencodeIng) return;
+                  dencodeAll();
+                  break;
+                case '2':
+                  deleteImageDir(widget.path);
+                  Navigator.pop(context);
+                  break;
+                case '3':
+                  final openDirPlugin = OpenDir();
+                  openDirPlugin.openNativeDir(path: widget.path);
+                  break;
+                case '4':
+                  final openDirPlugin = OpenDir();
+                  openDirPlugin.openNativeDir(
+                      path: '${widget.path}/dencrypt_output');
+                  break;
+                case '5':
+                  if (_encodeIng) return;
+                  encodeAll();
+                  break;
+                case '6':
+                  final openDirPlugin = OpenDir();
+                  openDirPlugin.openNativeDir(
+                      path: '${widget.path}/encrypt_output');
+                  break;
+                default:
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               PopupMenuItem<String>(
                 value: '1',
-                child: Text('解密全部文件${dencodeIng ? '(进行中)' : ''}'),
+                child: Text('解密全部图片${_dencodeIng ? '(进行中)' : ''}'),
               ),
               const PopupMenuItem<String>(
                 value: '2',
                 child: Text('删除此相册(不删除文件)'),
               ),
+              ...(Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+                  ? [
+                      const PopupMenuItem<String>(
+                        value: '3',
+                        child: Text('打开相册目录'),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: '4',
+                        child: Text('打开解密输出目录'),
+                      )
+                    ]
+                  : [],
+              PopupMenuItem<String>(
+                value: '5',
+                child: Text('加密全部图片${_encodeIng ? '(进行中)' : ''}'),
+              ),
+              ...(Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+                  ? [
+                      const PopupMenuItem<String>(
+                        value: '6',
+                        child: Text('打开加密输出目录'),
+                      ),
+                    ]
+                  : [],
             ],
           ),
         ],
       ),
       body: Container(
-        padding: const EdgeInsets.only(bottom: 20, top: 10),
+        padding: const EdgeInsets.only(bottom: 40, top: 10),
         child: GridView.count(
           crossAxisCount: wCount.toInt(),
-          children: List.generate(
-            imagePaths.length,
-            (index) => Container(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Center(
-                child: ServerImage(
-                  path: imagePaths[index],
-                  pwd: widget.pwd,
-                  height: h / 2,
-                  fit: BoxFit.fitHeight,
+          children: imagePaths
+              .map(
+                (path) => Container(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Center(
+                    child: ServerImage(
+                      path: path,
+                      pwd: widget.pwd,
+                      height: h / 2,
+                      fit: BoxFit.fitHeight,
+                      onTap: () => {
+                        navigatorPage(
+                            context,
+                            ImageView(
+                              path: path,
+                              psw: widget.pwd,
+                            )).then((value) => loadImages())
+                      },
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
+              )
+              .toList(),
         ),
       ),
     );

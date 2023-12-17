@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  open_dir_linux
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

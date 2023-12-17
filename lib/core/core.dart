@@ -3,15 +3,15 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:image/image.dart';
 
-String getRange(String input,int offset,{int rangeLen = 4}){
+String getRange(String input, int offset, {int rangeLen = 4}) {
   offset = offset % input.length;
-  input = input+input;
-  return input.substring(offset,offset+rangeLen);
+  input = input + input;
+  return input.substring(offset, offset + rangeLen);
 }
 
-String getSha256(String input){
+String getSha256(String input) {
   var bytes = utf8.encode(input);
-  var digest  = sha256.convert(bytes);
+  var digest = sha256.convert(bytes);
   return '$digest';
 }
 
@@ -22,7 +22,9 @@ List<T> shuffleArr<T>(List<T> arr, String key) {
   int keyOffset = 0;
 
   for (int i = 0; i < arrLen; i++) {
-    int toIndex = int.parse(getRange(shaKey, keyOffset, rangeLen:8), radix:16) % (arrLen - i);
+    int toIndex =
+        int.parse(getRange(shaKey, keyOffset, rangeLen: 8), radix: 16) %
+            (arrLen - i);
     keyOffset += 1;
     if (keyOffset >= keyLen) {
       keyOffset = 0;
@@ -60,6 +62,7 @@ List<List<T>> encryptImageV2<T>(List<List<T>> arr, String psw) {
   }
   return arr;
 }
+
 List<List<T>> dencryptImageV2<T>(List<List<T>> arr, String psw) {
   int width = arr[0].length;
   int height = arr.length;
@@ -69,15 +72,15 @@ List<List<T>> dencryptImageV2<T>(List<List<T>> arr, String psw) {
   shuffleArr(yArr, getSha256(psw));
 
   // 1920*1080 耗时10几毫秒
-  for (int y = height-1; y >=0; y--) {
+  for (int y = height - 1; y >= 0; y--) {
     var _y = yArr[y];
     var temp = arr[y];
     arr[y] = arr[_y];
     arr[_y] = temp;
   }
-  for (int y = height-1; y >= 0; y--) {
+  for (int y = height - 1; y >= 0; y--) {
     var row = arr[y];
-    for (int x = width-1; x >=0; x--) {
+    for (int x = width - 1; x >= 0; x--) {
       var _x = xArr[x];
       var temp = row[x];
       row[x] = row[_x];
@@ -88,39 +91,52 @@ List<List<T>> dencryptImageV2<T>(List<List<T>> arr, String psw) {
   return arr;
 }
 
-Image encryptImage(Image image,String pwd){
+Image? encryptImage(Image image, String pwd) {
   var width = image.width;
   var height = image.height;
-  if((image.textData!=null && image.textData!.containsKey('Encrypt')) || image.textData?['Encrypt']!='pixel_shuffle_2') {
+  if ((image.textData != null && image.textData!.containsKey('Encrypt')) ||
+      image.textData?['Encrypt'] != 'pixel_shuffle_2') {
     var imgArr = List.generate(
         height, (y) => List.generate(width, (x) => image.getPixel(x, y)));
     imgArr = encryptImageV2(imgArr, pwd);
     var newImg = Image(
-        width: width, height: height, numChannels: image.numChannels);
+        width: width,
+        height: height,
+        numChannels: image.numChannels,
+        exif: image.exif,
+        textData: image.textData,
+        format: image.format);
+
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
         newImg.setPixel(x, y, imgArr[y][x]);
       }
     }
-    if(image.textData==null){
-      image.textData = {"Encrypt":"pixel_shuffle_2"};
-    }else{
+    if (image.textData == null) {
+      image.textData = {"Encrypt": "pixel_shuffle_2"};
+    } else {
       image.textData!['Encrypt'] = 'pixel_shuffle_2';
     }
     return newImg;
   }
-  return image;
+  return null;
 }
 
-Image dencryptImage(Image image,String pwd){
+Image? dencryptImage(Image image, String pwd) {
   var width = image.width;
   var height = image.height;
-  if(image.textData?['Encrypt']=='pixel_shuffle_2') {
+  if (image.textData?['Encrypt'] == 'pixel_shuffle_2') {
     var imgArr = List.generate(
         height, (y) => List.generate(width, (x) => image.getPixel(x, y)));
     imgArr = dencryptImageV2(imgArr, pwd);
     var newImg = Image(
-        width: width, height: height, numChannels: image.numChannels);
+        width: width,
+        height: height,
+        numChannels: image.numChannels,
+        exif: image.exif,
+        textData: image.textData,
+        format: image.format);
+
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
         newImg.setPixel(x, y, imgArr[y][x]);
@@ -129,5 +145,5 @@ Image dencryptImage(Image image,String pwd){
     image.textData?.remove('Encrypt');
     return newImg;
   }
-  return image;
+  return null;
 }
