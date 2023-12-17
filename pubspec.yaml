@@ -62,6 +62,7 @@ dependencies:
   icons_launcher: ^2.1.0
   open_dir: ^0.0.1+5
   loading_animation_widget: ^1.2.0+4
+  url_launcher: ^6.1.10
 
 flutter_app_name:
   name: "相册"

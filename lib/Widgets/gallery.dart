@@ -3,6 +3,7 @@ import 'package:encrypt_gallery/Widgets/modal_add_dir.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Gallery extends StatefulWidget {
   const Gallery({Key? key}) : super(key: key);
@@ -123,14 +124,48 @@ class _GalleryState extends State<Gallery> {
             const DrawerHeader(
               child: Text('使用帮助'),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('这是一个与另外一个sd插件配套的软件，用于预览和解密被加密的png图片。'),
-                TextButton(onPressed: () {}, child: const Text('查看项目')),
-                const Text(''),
-              ],
-            )
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('这是一个与另外一个sd插件配套的软件，用于预览和解密被加密的png图片。'),
+                  const Text(
+                      '项目地址：https://github.com/viyiviyi/sd-encrypt-image'),
+                  TextButton(
+                      onPressed: () {
+                        launchUrl(Uri.parse(
+                            'https://github.com/viyiviyi/sd-encrypt-image'));
+                      },
+                      child: const Text('查看项目')),
+                  const Text(
+                      '使用时在页面右上角选择需要查看的文件夹，并输入密码，密码用于解密和加密，每个目录可以配置独立的密码，可以预览里面的图片，如果图片是加密的，受限于执行效率，解密可能需要一段时间，请勿快速来回滑动列表，可能导致非常卡顿。'),
+                  const Text('解密和加密功能在图片列表的右上角。'),
+                  const Text('解密和加密均不会修改源图片，将会在图片目录创建解密和加密的专属目录进行存放。'),
+                  const Text('如果图片已经被加密或解密不会重复加密或解密。'),
+                  const Text('可以在图片详情页右上角查看图片参数。'),
+                  const Text(
+                      '图片详情页的图片删除功能在删除后会回到图片列表，列表内的图片还存在，这个问题暂时不能解决，是页面刷新的问题，滚动列表后才会加载正确的列表。'),
+                  const Text(
+                      '此项目的地址：https://github.com/viyiviyi/encrypt_gallery'),
+                  TextButton(
+                      onPressed: () {
+                        launchUrl(Uri.parse(
+                            'https://github.com/viyiviyi/encrypt_gallery'));
+                      },
+                      child: const Text('查看项目')),
+                  const Text(
+                      '如果使用中有什么问题，可以在git提交issues，或者加这个Q群@群主反馈 816545732'),
+                  const Text(
+                      '如果使用得还算满意，能打赏一杯奶茶的话能为我提供不小的帮助。爱发电主页：https://afdian.net/a/yiyiooo ( •̅_•̅ )'),
+                  TextButton(
+                      onPressed: () {
+                        launchUrl(Uri.parse('https://afdian.net/a/yiyiooo'));
+                      },
+                      child: const Text('查看页面 ( •̅_•̅ )')),
+                ],
+              ),
+            ),
           ],
         ),
       ),
