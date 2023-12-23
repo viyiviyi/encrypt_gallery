@@ -1,8 +1,12 @@
 import 'dart:io';
 
+import 'package:encrypt_gallery/core/app_tool.dart';
+import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -23,12 +27,32 @@ class _ImageViewState extends State<ImageView> {
   TextStyle contentTextStyle = const TextStyle(
       color: Colors.white54, fontSize: 16, fontWeight: FontWeight.normal);
 
+  TextStyle titleTextStyle = const TextStyle(
+      color: Colors.white70, fontSize: 18, fontWeight: FontWeight.normal);
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    fileName =
-        widget.path.substring(widget.path.lastIndexOf(RegExp(r'/|\\')) + 1);
+    fileName = getPathName(widget.path);
+
+    getTempDir().then((cachePath) {
+      var cacheName = getSha256(widget.path + widget.psw);
+      var imgFile = File('${cachePath.absolute.path}/$cacheName');
+
+      if (imgFile.existsSync()) {
+        try {
+          setState(() {
+            data = FileImage(imgFile);
+          });
+          return;
+        } catch (e) {
+          if (kDebugMode) {
+            print('缩略图读取失败');
+          }
+        }
+      }
+    });
     compute(loadImage, LoadArg(path: widget.path, pwd: widget.psw))
         .then((image) {
       if (image == null) return;
@@ -67,7 +91,7 @@ class _ImageViewState extends State<ImageView> {
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: const Text('图片信息'),
+                          title: const Text('图片信息 (点击可复制)'),
                           content: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +101,7 @@ class _ImageViewState extends State<ImageView> {
                                   children: [
                                     Text(
                                       '路径: ',
-                                      style: contentTextStyle,
+                                      style: titleTextStyle,
                                     ),
                                     Text(
                                       widget.path,
@@ -93,11 +117,22 @@ class _ImageViewState extends State<ImageView> {
                                     children: [
                                       Text(
                                         '$key:',
-                                        style: contentTextStyle,
+                                        style: titleTextStyle,
                                       ),
-                                      Text(
-                                        value!,
-                                        style: contentTextStyle,
+                                      Text.rich(
+                                        TextSpan(
+                                          text: value!,
+                                          style: contentTextStyle,
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              Clipboard.setData(
+                                                  ClipboardData(text: value));
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(const SnackBar(
+                                                      content:
+                                                          Text('已复制到剪切板')));
+                                            },
+                                        ),
                                       )
                                     ],
                                   );

@@ -20,7 +20,7 @@ ImageProvider? loadImageProvider(LoadArg config) {
   // 保存缩列图
   if (config.cachePath != null && config.cachePath != '') {
     var thumbnail = img.copyResize(image, width: 200);
-    var cacheName = getSha256(config.path);
+    var cacheName = getSha256(config.path + config.pwd);
     var imgFile = File('${config.cachePath}/$cacheName');
     imgFile.writeAsBytesSync(img.encodePng(thumbnail));
   }

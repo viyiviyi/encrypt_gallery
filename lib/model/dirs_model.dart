@@ -59,7 +59,9 @@ Future<List<ImageDir>> getAllImageDir() {
 
 Future deleteImageDir(ImageDir imageDir) {
   var key = getSha256(imageDir.rootPath + imageDir.psw);
+  var key2 = getSha256(imageDir.rootPath);
   return getBox().then((box) {
+    if (box.containsKey(key2)) box.delete(key2);
     if (box.containsKey(key)) box.delete(key);
   });
 }

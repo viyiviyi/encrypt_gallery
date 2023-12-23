@@ -29,3 +29,8 @@ Future<Directory> getTempDir() async {
     return dir;
   });
 }
+
+RegExp _p = RegExp(r'/|\\');
+String getPathName(String path) {
+  return path.substring(path.lastIndexOf(_p) + 1);
+}

@@ -24,27 +24,25 @@ class ImageItem extends StatefulWidget {
   final FilterQuality filterQuality;
   final int? cacheWidth;
   final int? cacheHeight;
-  final Function()? onLongPress;
-  final Function()? onTap;
-  ImageItem(
-      {required this.path,
-      required this.pwd,
-      this.width,
-      this.height,
-      this.color,
-      this.colorBlendMode,
-      this.fit = BoxFit.cover,
-      this.alignment = Alignment.center,
-      this.repeat = ImageRepeat.noRepeat,
-      this.centerSlice,
-      this.matchTextDirection = false,
-      this.gaplessPlayback = false,
-      this.isAntiAlias = false,
-      this.filterQuality = FilterQuality.low,
-      this.cacheHeight,
-      this.cacheWidth,
-      this.onTap,
-      this.onLongPress});
+  ImageItem({
+    super.key,
+    required this.path,
+    required this.pwd,
+    this.width,
+    this.height,
+    this.color,
+    this.colorBlendMode,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.repeat = ImageRepeat.noRepeat,
+    this.centerSlice,
+    this.matchTextDirection = false,
+    this.gaplessPlayback = false,
+    this.isAntiAlias = false,
+    this.filterQuality = FilterQuality.low,
+    this.cacheHeight,
+    this.cacheWidth,
+  });
 
   @override
   _ImageItemState createState() => _ImageItemState();
@@ -57,12 +55,11 @@ class _ImageItemState extends State<ImageItem> {
   String? fileName;
 
   Future initImage() async {
+    fileName = getPathName(widget.path);
     var cachePath = await getTempDir();
     var cacheName = getSha256(widget.path + widget.pwd);
     var imgFile = File('${cachePath.absolute.path}/$cacheName');
 
-    fileName =
-        widget.path.substring(widget.path.lastIndexOf(RegExp(r'/|\\')) + 1);
     if (imgFile.existsSync()) {
       try {
         var cache = Image.file(imgFile);
@@ -89,6 +86,7 @@ class _ImageItemState extends State<ImageItem> {
       });
       return;
     }
+
     setState(() {
       _image = Image(
         image: image,
@@ -111,8 +109,15 @@ class _ImageItemState extends State<ImageItem> {
   }
 
   @override
+  void didUpdateWidget(oldWidget) {
+    if (widget.path != oldWidget.path) initImage();
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   void initState() {
     super.initState();
+
     Timer(const Duration(milliseconds: 50), () {
       initImage();
     });
@@ -124,8 +129,6 @@ class _ImageItemState extends State<ImageItem> {
       return loading;
     }
     return GestureDetector(
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
       child: _image,
     );
   }

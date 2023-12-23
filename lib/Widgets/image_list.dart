@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:encrypt_gallery/Widgets/common/grid_builder.dart';
 import 'package:encrypt_gallery/Widgets/image_item.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
+import 'package:encrypt_gallery/model/file_sort_type.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:open_dir/open_dir.dart';
@@ -17,6 +19,7 @@ var _encodeIng = false;
 class ImageList extends StatefulWidget {
   late String pathName;
   final ImageDir imageDir;
+
   ImageList(this.imageDir, {Key? key}) : super(key: key) {
     pathName = imageDir.rootPath
         .substring(imageDir.rootPath.lastIndexOf(RegExp(r'/|\\')) + 1);
@@ -27,22 +30,47 @@ class ImageList extends StatefulWidget {
 }
 
 class _ImageListState extends State<ImageList> {
-  var imagePaths = <String>[];
+  var imageFiles = <FileSystemEntity>[];
+  FileSortType sortType = FileSortType.timeDesc;
   Future loadImages() async {
-    imagePaths = [];
+    imageFiles = [];
     var dir = Directory(widget.imageDir.rootPath);
     if (await dir.exists()) {
       for (var value in dir.listSync()) {
         if (RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(value.path)) {
           var stat = await value.stat();
           if (stat.type == FileSystemEntityType.file) {
-            imagePaths.add(value.path);
+            imageFiles.add(value);
           }
         }
       }
+      sortImages();
     }
+  }
+
+  sortImages() {
     setState(() {
-      imagePaths = [...imagePaths];
+      switch (sortType) {
+        case FileSortType.name:
+          imageFiles.sort(
+              (l, r) => getPathName(l.path).compareTo(getPathName(r.path)));
+          break;
+        case FileSortType.nameDesc:
+          imageFiles.sort(
+              (l, r) => getPathName(r.path).compareTo(getPathName(l.path)));
+          break;
+        case FileSortType.time:
+          imageFiles.sort((l, r) =>
+              l.statSync().modified.millisecondsSinceEpoch -
+              r.statSync().modified.millisecondsSinceEpoch);
+          break;
+        case FileSortType.timeDesc:
+          imageFiles.sort((l, r) =>
+              r.statSync().modified.millisecondsSinceEpoch -
+              l.statSync().modified.millisecondsSinceEpoch);
+          break;
+        default:
+      }
     });
   }
 
@@ -89,11 +117,41 @@ class _ImageListState extends State<ImageList> {
     var w = MediaQuery.of(context).size.width;
     var h = MediaQuery.of(context).size.height;
     var wCount = w / min((200 + 20), w / 2);
-    var len = imagePaths.length;
+    var len = imageFiles.length;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.pathName),
         actions: [
+          PopupMenuButton<FileSortType>(
+            icon: const Icon(Icons.sort),
+            onSelected: (FileSortType value) {
+              sortType = value;
+              sortImages();
+            },
+            itemBuilder: (BuildContext context) =>
+                <PopupMenuEntry<FileSortType>>[
+              PopupMenuItem<FileSortType>(
+                value: FileSortType.timeDesc,
+                child: Text(
+                    '从新到旧${sortType == FileSortType.timeDesc ? ' 当前' : ''}'),
+              ),
+              PopupMenuItem<FileSortType>(
+                value: FileSortType.time,
+                child:
+                    Text('从旧到新${sortType == FileSortType.time ? ' 当前' : ''}'),
+              ),
+              PopupMenuItem<FileSortType>(
+                value: FileSortType.name,
+                child:
+                    Text('从A到Z${sortType == FileSortType.name ? ' 当前' : ''}'),
+              ),
+              PopupMenuItem<FileSortType>(
+                value: FileSortType.nameDesc,
+                child: Text(
+                    '从Z到A${sortType == FileSortType.nameDesc ? ' 当前' : ''}'),
+              ),
+            ],
+          ),
           PopupMenuButton<String>(
             onSelected: (String value) {
               switch (value) {
@@ -164,42 +222,35 @@ class _ImageListState extends State<ImageList> {
         ],
       ),
       body: Container(
-        padding: const EdgeInsets.only(bottom: 40, top: 10),
-        child: GridView.count(
-          crossAxisCount: wCount.toInt(),
-          children: imagePaths
-              .map(
-                (path) => Container(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Center(
-                    child: ImageItem(
-                      path: path,
-                      pwd: widget.imageDir.psw,
-                      height: h / 2,
-                      fit: BoxFit.fitHeight,
-                      onTap: () => {
-                        navigatorPage(
-                            context,
-                            ImageView(
-                              path: path,
-                              psw: widget.imageDir.psw,
-                            )).then((value) {
-                          if (value != null) {
-                            setState(() {
-                              imagePaths = imagePaths
-                                  .where((path) => path != value)
-                                  .toList();
-                            });
-                          }
-                        })
-                      },
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      ),
+          padding: const EdgeInsets.only(bottom: 40, top: 10),
+          child: GridBuilder(
+            count: imageFiles.length,
+            crossAxisCount: wCount.toInt(),
+            renderItem: (int idx) {
+              return ImageItem(
+                key: Key(imageFiles[idx].path),
+                path: imageFiles[idx].path,
+                pwd: widget.imageDir.psw,
+                height: h / 2,
+                fit: BoxFit.fitHeight,
+              );
+            },
+            onTap: (int idx) {
+              navigatorPage(
+                  context,
+                  ImageView(
+                    path: imageFiles[idx].path,
+                    psw: widget.imageDir.psw,
+                  )).then((value) {
+                if (value != null) {
+                  setState(() {
+                    imageFiles =
+                        imageFiles.where((file) => file.path != value).toList();
+                  });
+                }
+              });
+            },
+          )),
     );
   }
 }

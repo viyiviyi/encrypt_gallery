@@ -17,7 +17,6 @@ class _GalleryState extends State<Gallery> {
 
   void initDirs() async {
     getAllImageDir().then((values) {
-      print(values.length);
       setState(() {
         dirs = values;
       });
