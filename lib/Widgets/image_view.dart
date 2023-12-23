@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:encrypt_gallery/core/app_tool.dart';
 import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -22,6 +24,7 @@ class ImageView extends StatefulWidget {
 
 class _ImageViewState extends State<ImageView> {
   ImageProvider? data;
+  img.Image? image;
   String fileName = '';
   Map<String, String> info = {};
   TextStyle contentTextStyle = const TextStyle(
@@ -56,6 +59,7 @@ class _ImageViewState extends State<ImageView> {
     compute(loadImage, LoadArg(path: widget.path, pwd: widget.psw))
         .then((image) {
       if (image == null) return;
+      this.image = image;
       if (image.textData != null) {
         image.textData!.forEach((key, value) {
           info[key] = value;
@@ -77,6 +81,66 @@ class _ImageViewState extends State<ImageView> {
     });
   }
 
+  showInfoModal(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('图片信息 (点击可复制)'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '路径: ',
+                        style: titleTextStyle,
+                      ),
+                      Text(
+                        widget.path,
+                        style: contentTextStyle,
+                      )
+                    ],
+                  ),
+                  ...info.keys.map((key) {
+                    var value = info[key];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$key:',
+                          style: titleTextStyle,
+                        ),
+                        Text.rich(
+                          TextSpan(
+                            text: value!,
+                            style: contentTextStyle,
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                Clipboard.setData(ClipboardData(text: value));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('已复制到剪切板')));
+                              },
+                          ),
+                        )
+                      ],
+                    );
+                  }).toList()
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: const Text('关闭'),
+                onPressed: () => Navigator.of(context).pop(null),
+              ),
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,69 +151,16 @@ class _ImageViewState extends State<ImageView> {
             onSelected: (String value) {
               switch (value) {
                 case '1':
-                  showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text('图片信息 (点击可复制)'),
-                          content: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '路径: ',
-                                      style: titleTextStyle,
-                                    ),
-                                    Text(
-                                      widget.path,
-                                      style: contentTextStyle,
-                                    )
-                                  ],
-                                ),
-                                ...info.keys.map((key) {
-                                  var value = info[key];
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '$key:',
-                                        style: titleTextStyle,
-                                      ),
-                                      Text.rich(
-                                        TextSpan(
-                                          text: value!,
-                                          style: contentTextStyle,
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = () {
-                                              Clipboard.setData(
-                                                  ClipboardData(text: value));
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(const SnackBar(
-                                                      content:
-                                                          Text('已复制到剪切板')));
-                                            },
-                                        ),
-                                      )
-                                    ],
-                                  );
-                                }).toList()
-                              ],
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              child: const Text('关闭'),
-                              onPressed: () => Navigator.of(context).pop(null),
-                            ),
-                          ],
-                        );
-                      });
+                  showInfoModal(context);
                   break;
                 case '2':
+                  FilePicker.platform
+                      .saveFile(fileName: fileName, type: FileType.image)
+                      .then((path) {
+                    if (path != null && image != null) {
+                      File(path).writeAsBytesSync(img.encodePng(image!));
+                    }
+                  });
                   break;
                 case '3':
                   showDialog(
@@ -184,10 +195,10 @@ class _ImageViewState extends State<ImageView> {
                 value: '1',
                 child: Text('查看图片信息'),
               ),
-              // const PopupMenuItem<String>(
-              //   value: '2',
-              //   child: Text('设为封面'),
-              // ),
+              const PopupMenuItem<String>(
+                value: '2',
+                child: Text('保存图片'),
+              ),
               const PopupMenuItem<String>(
                 value: '3',
                 child: Text('删除'),
