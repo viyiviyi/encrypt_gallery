@@ -6,15 +6,15 @@ import 'package:encrypt_gallery/Widgets/image_item.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:encrypt_gallery/model/file_sort_type.dart';
+import 'package:encrypt_gallery/model/provider_status.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:open_dir/open_dir.dart';
+import 'package:provider/provider.dart';
 
 import '../core/app_tool.dart';
 import 'image_view.dart';
-
-var _dencodeIng = false;
-var _encodeIng = false;
 
 class ImageList extends StatefulWidget {
   late String pathName;
@@ -85,35 +85,39 @@ class _ImageListState extends State<ImageList> {
     });
   }
 
-  void dencodeAll() {
-    setState(() {
-      _dencodeIng = true;
-    });
-    compute(
-        dencryptAllImage,
-        LoadArg(
-          path: widget.imageDir.rootPath,
-          pwd: widget.imageDir.psw,
-        )).then((value) {
-      setState(() {
-        _dencodeIng = false;
-      });
+  void dencodeAll(WorkStatus workStatus) {
+    FilePicker.platform
+        .getDirectoryPath(
+            initialDirectory: '${widget.imageDir.rootPath}/dencrypt_output')
+        .then((value) {
+      if (value != null) {
+        workStatus.setDencodeIng(true);
+        compute(dencryptAllImage, {
+          'inputPath': widget.imageDir.rootPath,
+          'outputPath': value,
+          'password': widget.imageDir.psw,
+        }).then((value) {
+          workStatus.setDencodeIng(false);
+        });
+      }
     });
   }
 
-  void encodeAll() {
-    setState(() {
-      _encodeIng = true;
-    });
-    compute(
-        encryptAllImage,
-        LoadArg(
-          path: widget.imageDir.rootPath,
-          pwd: widget.imageDir.psw,
-        )).then((value) {
-      setState(() {
-        _encodeIng = false;
-      });
+  void encodeAll(WorkStatus workStatus) {
+    FilePicker.platform
+        .getDirectoryPath(
+            initialDirectory: '${widget.imageDir.rootPath}/encrypt_output')
+        .then((value) {
+      if (value != null) {
+        workStatus.setEncodeIng(true);
+        compute(encryptAllImage, {
+          'inputPath': widget.imageDir.rootPath,
+          'outputPath': value,
+          'password': widget.imageDir.psw,
+        }).then((value) {
+          workStatus.setEncodeIng(false);
+        });
+      }
     });
   }
 
@@ -129,6 +133,7 @@ class _ImageListState extends State<ImageList> {
     var h = MediaQuery.of(context).size.height;
     var wCount = w / min((200 + 20), w / 2);
     var len = imageFiles.length;
+    var workStats = context.watch<WorkStatus>();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.pathName),
@@ -167,8 +172,8 @@ class _ImageListState extends State<ImageList> {
             onSelected: (String value) {
               switch (value) {
                 case '1':
-                  if (_dencodeIng) return;
-                  dencodeAll();
+                  if (workStats.dencodeIng) return;
+                  dencodeAll(workStats);
                   break;
                 case '2':
                   deleteThumbnail().then(((value) {
@@ -186,8 +191,8 @@ class _ImageListState extends State<ImageList> {
                       path: '${widget.imageDir.rootPath}/dencrypt_output');
                   break;
                 case '5':
-                  if (_encodeIng) return;
-                  encodeAll();
+                  if (workStats.encodeIng) return;
+                  encodeAll(workStats);
                   break;
                 case '6':
                   final openDirPlugin = OpenDir();
@@ -200,7 +205,7 @@ class _ImageListState extends State<ImageList> {
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               PopupMenuItem<String>(
                 value: '1',
-                child: Text('解密全部图片${_dencodeIng ? '(进行中)' : ''}'),
+                child: Text('解密全部图片${workStats.dencodeIng ? '(进行中)' : ''}'),
               ),
               const PopupMenuItem<String>(
                 value: '2',
@@ -220,7 +225,7 @@ class _ImageListState extends State<ImageList> {
                   : [],
               PopupMenuItem<String>(
                 value: '5',
-                child: Text('加密全部图片${_encodeIng ? '(进行中)' : ''}'),
+                child: Text('加密全部图片${workStats.encodeIng ? '(进行中)' : ''}'),
               ),
               ...(Platform.isWindows || Platform.isLinux || Platform.isMacOS)
                   ? [

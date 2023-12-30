@@ -103,10 +103,14 @@ ImageProvider imageToImageProvider(img.Image image) {
   return MemoryImage(img.encodePng(image));
 }
 
-void dencryptAllImage(LoadArg config) {
-  var path = config.path;
+void dencryptAllImage(Map<String, String> config) {
+  var path = config['inputPath'];
+  var outputPath = config['outputPath'];
+  var password = config['password'];
+  if (path == null || outputPath == null || password == null) return;
   var dir = Directory(path);
-  var outputDir = Directory('$path/dencrypt_output');
+  var outputDir = Directory(outputPath);
+  // var outputDir = Directory('$path/dencrypt_output');
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
   for (var file in dir.listSync()) {
@@ -119,16 +123,20 @@ void dencryptAllImage(LoadArg config) {
     if (File(outputPath).existsSync()) continue;
     var image = img.decodeImage(File(file.path).readAsBytesSync());
     if (image == null) continue;
-    image = dencryptImage(image, config.pwd);
+    image = dencryptImage(image, password);
     if (image == null) continue;
     File(outputPath).writeAsBytesSync(img.encodePng(image));
   }
 }
 
-void encryptAllImage(LoadArg config) {
-  var path = config.path;
+void encryptAllImage(Map<String, String> config) {
+  var path = config['inputPath'];
+  var outputPath = config['outputPath'];
+  var password = config['password'];
+  if (path == null || outputPath == null || password == null) return;
   var dir = Directory(path);
-  var outputDir = Directory('$path/encrypt_output');
+  var outputDir = Directory(outputPath);
+  // var outputDir = Directory('$path/encrypt_output');
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
   for (var file in dir.listSync()) {
@@ -141,7 +149,7 @@ void encryptAllImage(LoadArg config) {
     if (File(outputPath).existsSync()) continue;
     var image = img.decodeImage(File(file.path).readAsBytesSync());
     if (image == null) continue;
-    image = encryptImage(image, config.pwd);
+    image = encryptImage(image, password);
     if (image == null) continue; // 表示不需要解密
     File(outputPath).writeAsBytesSync(img.encodePng(image));
   }

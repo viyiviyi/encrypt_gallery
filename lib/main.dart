@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:encrypt_gallery/core/hive_box.dart';
+import 'package:encrypt_gallery/model/provider_status.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 import 'Widgets/gallery.dart';
 
@@ -24,7 +26,14 @@ Future _initApp() async {
 
 void main() {
   _initApp();
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => WorkStatus()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
