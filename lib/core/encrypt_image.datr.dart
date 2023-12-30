@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:encrypt_gallery/core/app_tool.dart';
 import 'package:encrypt_gallery/core/core.dart';
+import 'package:encrypt_gallery/core/future_queue.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:image/image.dart' as img;
@@ -12,20 +15,54 @@ class LoadArg {
   LoadArg({required this.path, required this.pwd, this.cachePath});
 }
 
-ImageProvider? loadImageProvider(LoadArg config) {
+FutureQueue _loadImageProviderQueue = FutureQueue();
+Map<String, Future<ImageProvider?>> _loadImageProviderCache =
+    {}; // 临时保存，防止多次发起请求
+Future<ImageProvider?> loadImageProvider(LoadArg config) {
+  loadImageProviderDisable(config.path); // 当一个新的请求发起后，直接删除旧的请求；
+  var future = _loadImageProviderQueue.add<ImageProvider?>((completer) async {
+    if (completer.isCompleted) return;
+    var result = await compute(_loadImageProvider, config);
+    if (completer.isCompleted) return;
+    completer.complete(result);
+  });
+  future
+      .whenComplete(() => _loadImageProviderCache.remove(config.path)); // 完成时删除
+  _loadImageProviderCache[config.path] = future;
+  return _loadImageProviderCache[config.path]!;
+}
+
+// 丢弃一个请求，用于在组件被销毁时
+void loadImageProviderDisable(String imagePath) {
+  if (_loadImageProviderCache[imagePath] != null) {
+    _loadImageProviderQueue.dispose(_loadImageProviderCache[imagePath]!);
+    _loadImageProviderCache.remove(imagePath);
+  }
+}
+
+ImageProvider? _loadImageProvider(LoadArg config) {
   var image = loadImage(config);
   if (image == null) {
     return null;
   }
   // 保存缩列图
   if (config.cachePath != null && config.cachePath != '') {
-    var thumbnail = img.copyResize(image, width: 200);
-    var cacheName = getSha256(config.path + config.pwd);
-    var imgFile = File('${config.cachePath}/$cacheName');
+    var thumbnailWidth = 200;
+    if (image.width > image.height) {
+      // 如果是宽图，则让缩略图的高保持在200
+      thumbnailWidth = 200 * image.width ~/ image.height;
+    }
+    var thumbnail = img.copyResize(image, width: thumbnailWidth);
+    var thumbnailPath =
+        getThumbnailPath(config.cachePath!, config.path, config.pwd);
+    var imgFile = File(thumbnailPath);
     imgFile.writeAsBytesSync(img.encodePng(thumbnail));
   }
-  return MemoryImage(img.encodePng(image));
+  return imageToImageProvider(image);
 }
+
+// 加载图片Image对象
+Map<String, img.Image?> _loadImageQueue = {};
 
 img.Image? loadImage(LoadArg config) {
   var file = File(config.path);

@@ -74,6 +74,17 @@ class _ImageListState extends State<ImageList> {
     });
   }
 
+  Future deleteThumbnail() {
+    return getTempDir().then((cachePath) {
+      for (var element in imageFiles) {
+        var thumbnailPath = getThumbnailPath(cachePath.absolute.path,
+            element.absolute.path, widget.imageDir.psw);
+        var thumbnail = File(thumbnailPath);
+        if (thumbnail.existsSync()) thumbnail.deleteSync();
+      }
+    });
+  }
+
   void dencodeAll() {
     setState(() {
       _dencodeIng = true;
@@ -160,8 +171,10 @@ class _ImageListState extends State<ImageList> {
                   dencodeAll();
                   break;
                 case '2':
-                  deleteImageDir(widget.imageDir);
-                  Navigator.pop(context);
+                  deleteThumbnail().then(((value) {
+                    deleteImageDir(widget.imageDir);
+                    Navigator.pop(context);
+                  }));
                   break;
                 case '3':
                   final openDirPlugin = OpenDir();

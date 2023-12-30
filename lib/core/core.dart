@@ -113,9 +113,13 @@ Image? encryptImage(Image image, String pwd) {
       }
     }
     if (image.textData == null) {
-      image.textData = {"Encrypt": "pixel_shuffle_2"};
+      image.textData = {
+        "Encrypt": "pixel_shuffle_2",
+        "EncryptPwdSha": getSha256('${pwd}Encrypt') //保存一个用于校验密码是否正确是密码哈希值
+      };
     } else {
       image.textData!['Encrypt'] = 'pixel_shuffle_2';
+      image.textData!['EncryptPwdSha'] = getSha256('${pwd}Encrypt');
     }
     return newImg;
   }
@@ -126,6 +130,11 @@ Image? dencryptImage(Image image, String pwd) {
   var width = image.width;
   var height = image.height;
   if (image.textData?['Encrypt'] == 'pixel_shuffle_2') {
+    // 当存在密码哈希属性时检查密码哈希属性的值与当前密码的哈希值是否一致，不一致就不解密
+    if (image.textData?['EncryptPwdSha'] != null &&
+        image.textData?['EncryptPwdSha'] != getSha256('${pwd}Encrypt')) {
+      return null;
+    }
     var imgArr = List.generate(
         height, (y) => List.generate(width, (x) => image.getPixel(x, y)));
     imgArr = dencryptImageV2(imgArr, pwd);

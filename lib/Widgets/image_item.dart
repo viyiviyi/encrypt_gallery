@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:encrypt_gallery/core/app_tool.dart';
-import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -57,8 +56,9 @@ class _ImageItemState extends State<ImageItem> {
   Future initImage() async {
     fileName = getPathName(widget.path);
     var cachePath = await getTempDir();
-    var cacheName = getSha256(widget.path + widget.pwd);
-    var imgFile = File('${cachePath.absolute.path}/$cacheName');
+    var thumbnailPath =
+        getThumbnailPath(cachePath.absolute.path, widget.path, widget.pwd);
+    var imgFile = File(thumbnailPath);
 
     if (imgFile.existsSync()) {
       try {
@@ -73,12 +73,10 @@ class _ImageItemState extends State<ImageItem> {
         }
       }
     }
-    var image = await compute(
-        loadImageProvider,
-        LoadArg(
-            path: widget.path,
-            pwd: widget.pwd,
-            cachePath: cachePath.absolute.path));
+    var image = await loadImageProvider(LoadArg(
+        path: widget.path,
+        pwd: widget.pwd,
+        cachePath: cachePath.absolute.path));
 
     if (image == null) {
       setState(() {
@@ -90,7 +88,6 @@ class _ImageItemState extends State<ImageItem> {
     setState(() {
       _image = Image(
         image: image,
-        key: Key(cacheName),
         width: widget.width,
         height: widget.height,
         fit: widget.fit,
@@ -117,10 +114,15 @@ class _ImageItemState extends State<ImageItem> {
   @override
   void initState() {
     super.initState();
+    initImage();
+    // Timer(const Duration(milliseconds: 50), () {
+    // });
+  }
 
-    Timer(const Duration(milliseconds: 50), () {
-      initImage();
-    });
+  @override
+  void dispose() {
+    loadImageProviderDisable(widget.path);
+    super.dispose();
   }
 
   @override

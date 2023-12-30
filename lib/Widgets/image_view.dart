@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:encrypt_gallery/core/app_tool.dart';
-import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -40,9 +39,9 @@ class _ImageViewState extends State<ImageView> {
     fileName = getPathName(widget.path);
 
     getTempDir().then((cachePath) {
-      var cacheName = getSha256(widget.path + widget.psw);
-      var imgFile = File('${cachePath.absolute.path}/$cacheName');
-
+      var thumbnailPath =
+          getThumbnailPath(cachePath.absolute.path, widget.path, widget.psw);
+      var imgFile = File(thumbnailPath);
       if (imgFile.existsSync()) {
         try {
           setState(() {
