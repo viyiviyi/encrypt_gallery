@@ -87,10 +87,9 @@ class _ImageListState extends State<ImageList> {
 
   void dencodeAll(WorkStatus workStatus) {
     FilePicker.platform
-        .getDirectoryPath(
-            initialDirectory: '${widget.imageDir.rootPath}/dencrypt_output')
+        .getDirectoryPath(dialogTitle: '指定解密文件存放目录，请勿指定源目录。')
         .then((value) {
-      if (value != null) {
+      if (value != null && value != '/' && value != '') {
         workStatus.setDencodeIng(true);
         compute(dencryptAllImage, {
           'inputPath': widget.imageDir.rootPath,
@@ -105,10 +104,9 @@ class _ImageListState extends State<ImageList> {
 
   void encodeAll(WorkStatus workStatus) {
     FilePicker.platform
-        .getDirectoryPath(
-            initialDirectory: '${widget.imageDir.rootPath}/encrypt_output')
+        .getDirectoryPath(dialogTitle: '指定加密文件存放目录，请勿指定源目录。')
         .then((value) {
-      if (value != null) {
+      if (value != null && value != '/' && value != '') {
         workStatus.setEncodeIng(true);
         compute(encryptAllImage, {
           'inputPath': widget.imageDir.rootPath,
