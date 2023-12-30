@@ -19,7 +19,9 @@ FutureQueue _loadImageProviderQueue = FutureQueue();
 Map<String, Future<ImageProvider?>> _loadImageProviderCache =
     {}; // 临时保存，防止多次发起请求
 Future<ImageProvider?> loadImageProvider(LoadArg config) {
-  loadImageProviderDisable(config.path); // 当一个新的请求发起后，直接删除旧的请求；
+  if (_loadImageProviderCache[config.path] != null) {
+    return _loadImageProviderCache[config.path]!;
+  }
   var future = _loadImageProviderQueue.add<ImageProvider?>((completer) async {
     if (completer.isCompleted) return;
     var result = await compute(_loadImageProvider, config);
