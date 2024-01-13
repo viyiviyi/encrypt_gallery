@@ -61,16 +61,17 @@ LoadResult _loadImageProvider(LoadArg config) {
   }
   // 保存缩列图
   if (config.cachePath != null && config.cachePath != '') {
-    var thumbnailWidth = 480;
+    var thumbnailWidth = 512;
     if (image.width > image.height) {
       // 如果是宽图，则让缩略图的高保持在200
-      thumbnailWidth = 480 * image.width ~/ image.height;
+      thumbnailWidth = 512 * image.width ~/ image.height;
     }
     var thumbnail = img.copyResize(image, width: thumbnailWidth);
     var thumbnailPath =
         getThumbnailPath(config.cachePath!, config.path, config.pwd);
     var imgFile = File(thumbnailPath);
-    imgFile.writeAsBytesSync(img.encodePng(thumbnail));
+    imgFile.writeAsBytesSync(
+        img.encodeJpg(thumbnail, quality: 80, chroma: img.JpegChroma.yuv420));
   }
   var provider = imageToImageProvider(image);
   return LoadResult(image, provider);
