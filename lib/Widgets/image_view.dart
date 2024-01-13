@@ -12,9 +12,11 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:photo_view/photo_view.dart';
 
 class ImageView extends StatefulWidget {
-  final String path;
+  final List<String> paths;
+  late int index;
   final String psw;
-  const ImageView({Key? key, required this.path, required this.psw})
+  ImageView(
+      {Key? key, required this.paths, required this.index, required this.psw})
       : super(key: key);
 
   @override
@@ -22,25 +24,28 @@ class ImageView extends StatefulWidget {
 }
 
 class _ImageViewState extends State<ImageView> {
+  String imagePath = '';
   ImageProvider? data;
   img.Image? image;
   String fileName = '';
+
   Map<String, String> info = {};
   TextStyle contentTextStyle = const TextStyle(
       color: Colors.white54, fontSize: 16, fontWeight: FontWeight.normal);
-
   TextStyle titleTextStyle = const TextStyle(
       color: Colors.white70, fontSize: 18, fontWeight: FontWeight.normal);
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    fileName = getPathName(widget.path);
-
+  showImage() {
+    data = null;
+    image = null;
+    info = {};
+    imagePath = widget.paths[widget.index];
+    fileName = getPathName(imagePath);
+    setState(() {});
     getTempDir().then((cachePath) {
+      if (image != null) return;
       var thumbnailPath =
-          getThumbnailPath(cachePath.absolute.path, widget.path, widget.psw);
+          getThumbnailPath(cachePath.absolute.path, imagePath, widget.psw);
       var imgFile = File(thumbnailPath);
       if (imgFile.existsSync()) {
         try {
@@ -55,8 +60,19 @@ class _ImageViewState extends State<ImageView> {
         }
       }
     });
-    compute(loadImage, LoadArg(path: widget.path, pwd: widget.psw))
-        .then((image) {
+    var prvIdx = widget.index;
+    loadImageProviderDisable(widget.paths[
+        widget.index - 2 < 0 ? widget.paths.length - 2 : widget.index - 2]);
+    loadImageProviderDisable(widget
+        .paths[widget.index + 2 >= widget.paths.length ? 1 : widget.index + 2]);
+    loadImageProvider(LoadArg(path: imagePath, pwd: widget.psw)).then((result) {
+      if (prvIdx != widget.index) return;
+      if (result.imageProvider != null) {
+        setState(() {
+          data = result.imageProvider;
+        });
+      }
+      var image = result.image;
       if (image == null) return;
       this.image = image;
       if (image.textData != null) {
@@ -72,12 +88,68 @@ class _ImageViewState extends State<ImageView> {
           }
         });
       }
-      compute(imageToImageProvider, image).then((img) {
-        setState(() {
-          data = img;
-        });
-      });
+      setState(() {});
     });
+    loadImageProvider(LoadArg(
+        path: widget.paths[
+            widget.index - 1 < 0 ? widget.paths.length - 1 : widget.index - 1],
+        pwd: widget.psw));
+    loadImageProvider(LoadArg(
+        path: widget.paths[
+            widget.index + 1 >= widget.paths.length ? 0 : widget.index + 1],
+        pwd: widget.psw));
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    loadImageProviderDisable(imagePath);
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    showImage();
+    super.initState();
+  }
+
+  delImage() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('删除提示'),
+            content: const Text('将会从磁盘中删除文件'),
+            actions: [
+              TextButton(
+                child: const Text('取消'),
+                onPressed: () => Navigator.of(context).pop(null),
+              ),
+              TextButton(
+                child: const Text('确认'),
+                onPressed: () {
+                  File(imagePath).delete().then((value) {
+                    Navigator.of(context).pop(imagePath);
+                    Navigator.of(context).pop(imagePath);
+                  });
+                },
+              ),
+            ],
+          );
+        });
+  }
+
+  nextImage() {
+    widget.index += 1;
+    if (widget.index >= widget.paths.length) widget.index = 0;
+    showImage();
+  }
+
+  previousImage() {
+    widget.index -= 1;
+    if (widget.index <= 0) widget.index = widget.paths.length - 1;
+    showImage();
   }
 
   showInfoModal(BuildContext context) {
@@ -98,7 +170,7 @@ class _ImageViewState extends State<ImageView> {
                         style: titleTextStyle,
                       ),
                       Text(
-                        widget.path,
+                        imagePath,
                         style: contentTextStyle,
                       )
                     ],
@@ -162,29 +234,7 @@ class _ImageViewState extends State<ImageView> {
                   });
                   break;
                 case '3':
-                  showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text('删除提示'),
-                          content: const Text('将会从磁盘中删除文件'),
-                          actions: [
-                            TextButton(
-                              child: const Text('取消'),
-                              onPressed: () => Navigator.of(context).pop(null),
-                            ),
-                            TextButton(
-                              child: const Text('确认'),
-                              onPressed: () {
-                                File(widget.path).delete().then((value) {
-                                  Navigator.of(context).pop(widget.path);
-                                  Navigator.of(context).pop(widget.path);
-                                });
-                              },
-                            ),
-                          ],
-                        );
-                      });
+                  delImage();
                   break;
                 default:
               }
@@ -206,20 +256,49 @@ class _ImageViewState extends State<ImageView> {
           ),
         ],
       ),
-      body: Container(
-        child: data != null
-            ? PhotoView(
-                imageProvider: data,
-              )
-            : Center(
-                child: Column(
-                  children: [
-                    Image.asset('images/load_image.png'),
-                    LoadingAnimationWidget.staggeredDotsWave(
-                        color: Colors.white60, size: 50)
-                  ],
-                ),
-              ),
+      body: Stack(
+        alignment: Alignment.center,
+        // 设置填充方式展接受父类约束最大值
+        fit: StackFit.expand,
+        children: [
+          Container(
+            child: data != null
+                ? PhotoView(
+                    imageProvider: data,
+                  )
+                : Center(
+                    child: Column(
+                      children: [
+                        Image.asset('images/load_image.png'),
+                        LoadingAnimationWidget.staggeredDotsWave(
+                            color: Colors.white60, size: 50)
+                      ],
+                    ),
+                  ),
+          ),
+          Positioned(
+            left: 0,
+            top: MediaQuery.of(context).size.height / 2 - 40 - 20,
+            child: IconButton(
+              iconSize: 40,
+              icon: const Icon(Icons.arrow_left_rounded),
+              onPressed: () {
+                previousImage();
+              },
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).size.height / 2 - 40 - 20,
+            right: 0,
+            child: IconButton(
+              iconSize: 40,
+              icon: const Icon(Icons.arrow_right_rounded),
+              onPressed: () {
+                nextImage();
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -255,7 +255,8 @@ class _ImageListState extends State<ImageList> {
               navigatorPage(
                   context,
                   ImageView(
-                    path: imageFiles[idx].path,
+                    paths: imageFiles.map((e) => e.path).toList(),
+                    index: idx,
                     psw: widget.imageDir.psw,
                   )).then((value) {
                 if (value != null) {

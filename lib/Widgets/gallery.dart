@@ -133,8 +133,10 @@ class _GalleryState extends State<Gallery> {
                       '项目地址：https://github.com/viyiviyi/sd-encrypt-image'),
                   TextButton(
                       onPressed: () {
-                        launchUrl(Uri.parse(
-                            'https://github.com/viyiviyi/sd-encrypt-image'));
+                        launchUrl(
+                            Uri.parse(
+                                'https://github.com/viyiviyi/sd-encrypt-image'),
+                            mode: LaunchMode.externalApplication);
                       },
                       child: const Text('查看项目')),
                   const Text(
@@ -149,8 +151,10 @@ class _GalleryState extends State<Gallery> {
                       '此项目的地址：https://github.com/viyiviyi/encrypt_gallery'),
                   TextButton(
                       onPressed: () {
-                        launchUrl(Uri.parse(
-                            'https://github.com/viyiviyi/encrypt_gallery'));
+                        launchUrl(
+                            mode: LaunchMode.externalApplication,
+                            Uri.parse(
+                                'https://github.com/viyiviyi/encrypt_gallery'));
                       },
                       child: const Text('查看项目')),
                   const Text(
@@ -159,7 +163,9 @@ class _GalleryState extends State<Gallery> {
                       '如果使用得还算满意，能打赏一杯奶茶的话能为我提供不小的帮助。爱发电主页：https://afdian.net/a/yiyiooo ( •̅_•̅ )'),
                   TextButton(
                       onPressed: () {
-                        launchUrl(Uri.parse('https://afdian.net/a/yiyiooo'));
+                        launchUrl(
+                            mode: LaunchMode.externalApplication,
+                            Uri.parse('https://afdian.net/a/yiyiooo'));
                       },
                       child: const Text('查看页面 ( •̅_•̅ )')),
                 ],

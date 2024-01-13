@@ -73,12 +73,12 @@ class _ImageItemState extends State<ImageItem> {
         }
       }
     }
-    var image = await loadImageProvider(LoadArg(
+    var result = await loadImageProvider(LoadArg(
         path: widget.path,
         pwd: widget.pwd,
         cachePath: cachePath.absolute.path));
 
-    if (image == null) {
+    if (result.imageProvider == null) {
       setState(() {
         loading = Image.asset('images/error_image.png');
       });
@@ -87,7 +87,7 @@ class _ImageItemState extends State<ImageItem> {
 
     setState(() {
       _image = Image(
-        image: image,
+        image: result.imageProvider!,
         width: widget.width,
         height: widget.height,
         fit: widget.fit,

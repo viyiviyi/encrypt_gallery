@@ -15,17 +15,29 @@ class LoadArg {
   LoadArg({required this.path, required this.pwd, this.cachePath});
 }
 
+class LoadResult {
+  img.Image? image;
+  ImageProvider? imageProvider;
+  LoadResult([this.image, this.imageProvider]);
+}
+
 FutureQueue _loadImageProviderQueue = FutureQueue();
-Map<String, Future<ImageProvider?>> _loadImageProviderCache =
-    {}; // 临时保存，防止多次发起请求
-Future<ImageProvider?> loadImageProvider(LoadArg config) {
+Map<String, Future<LoadResult>> _loadImageProviderCache = {}; // 临时保存，防止多次发起请求
+Map<String, LoadResult> _history = {};
+List<String> _historyKey = [];
+Future<LoadResult> loadImageProvider(LoadArg config) async {
+  if (_history[config.path] != null) return _history[config.path]!;
   if (_loadImageProviderCache[config.path] != null) {
     return _loadImageProviderCache[config.path]!;
   }
-  var future = _loadImageProviderQueue.add<ImageProvider?>((completer) async {
+  var future = _loadImageProviderQueue.add<LoadResult>((completer) async {
     if (completer.isCompleted) return;
     var result = await compute(_loadImageProvider, config);
     if (completer.isCompleted) return;
+    _history[config.path] = result;
+    if (_historyKey.length > 100) {
+      _history.remove(_historyKey.removeAt(0));
+    }
     completer.complete(result);
   });
   future
@@ -42,17 +54,17 @@ void loadImageProviderDisable(String imagePath) {
   }
 }
 
-ImageProvider? _loadImageProvider(LoadArg config) {
+LoadResult _loadImageProvider(LoadArg config) {
   var image = loadImage(config);
   if (image == null) {
-    return null;
+    return LoadResult();
   }
   // 保存缩列图
   if (config.cachePath != null && config.cachePath != '') {
-    var thumbnailWidth = 200;
+    var thumbnailWidth = 480;
     if (image.width > image.height) {
       // 如果是宽图，则让缩略图的高保持在200
-      thumbnailWidth = 200 * image.width ~/ image.height;
+      thumbnailWidth = 480 * image.width ~/ image.height;
     }
     var thumbnail = img.copyResize(image, width: thumbnailWidth);
     var thumbnailPath =
@@ -60,12 +72,11 @@ ImageProvider? _loadImageProvider(LoadArg config) {
     var imgFile = File(thumbnailPath);
     imgFile.writeAsBytesSync(img.encodePng(thumbnail));
   }
-  return imageToImageProvider(image);
+  var provider = imageToImageProvider(image);
+  return LoadResult(image, provider);
 }
 
 // 加载图片Image对象
-Map<String, img.Image?> _loadImageQueue = {};
-
 img.Image? loadImage(LoadArg config) {
   var file = File(config.path);
   if (!file.existsSync()) {
@@ -81,7 +92,8 @@ img.Image? loadImage(LoadArg config) {
   var eFile = File('$dir/dencrypt_output/$fileName');
 
   if (eFile.existsSync()) {
-    return img.decodeImage(eFile.readAsBytesSync());
+    var image = img.decodeImage(eFile.readAsBytesSync());
+    return image;
   }
 
   var image = img.decodeImage(file.readAsBytesSync());
@@ -103,7 +115,7 @@ ImageProvider imageToImageProvider(img.Image image) {
   return MemoryImage(img.encodePng(image));
 }
 
-void dencryptAllImage(Map<String, String> config) {
+Future dencryptAllImage(Map<String, String> config) async {
   var path = config['inputPath'];
   var outputPath = config['outputPath'];
   var password = config['password'];
@@ -113,6 +125,7 @@ void dencryptAllImage(Map<String, String> config) {
   // var outputDir = Directory('$path/dencrypt_output');
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
+  FutureQueue queue = FutureQueue(8);
   for (var file in dir.listSync()) {
     if (!RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(file.path)) continue;
     var stat = file.statSync();
@@ -121,15 +134,33 @@ void dencryptAllImage(Map<String, String> config) {
         file.path.substring(file.path.lastIndexOf(RegExp(r'/|\\')) + 1);
     var outputPath = '${outputDir.path}/$fileName';
     if (File(outputPath).existsSync()) continue;
-    var image = img.decodeImage(File(file.path).readAsBytesSync());
-    if (image == null) continue;
-    image = dencryptImage(image, password);
-    if (image == null) continue;
-    File(outputPath).writeAsBytesSync(img.encodePng(image));
+    queue.add((completer) async {
+      await compute(_denctyptImage, {
+        'imagePath': file.path,
+        'password': password,
+        'savePath': outputPath
+      });
+      completer.complete();
+    });
+
+    // var image = img.decodeImage(File(file.path).readAsBytesSync());
+    // if (image == null) continue;
+    // image = dencryptImage(image, password);
+    // if (image == null) continue;
+    // File(outputPath).writeAsBytesSync(img.encodePng(image));
   }
+  return queue.awaitAll();
 }
 
-void encryptAllImage(Map<String, String> config) {
+void _denctyptImage(Map<String, String> input) {
+  var image = img.decodeImage(File(input['imagePath']!).readAsBytesSync());
+  if (image == null) return;
+  image = dencryptImage(image, input['password']!);
+  if (image == null) return;
+  File(input['savePath']!).writeAsBytesSync(img.encodePng(image));
+}
+
+Future encryptAllImage(Map<String, String> config) async {
   var path = config['inputPath'];
   var outputPath = config['outputPath'];
   var password = config['password'];
@@ -139,6 +170,7 @@ void encryptAllImage(Map<String, String> config) {
   // var outputDir = Directory('$path/encrypt_output');
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
+  FutureQueue queue = FutureQueue(8);
   for (var file in dir.listSync()) {
     if (!RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(file.path)) continue;
     var stat = file.statSync();
@@ -147,10 +179,27 @@ void encryptAllImage(Map<String, String> config) {
         file.path.substring(file.path.lastIndexOf(RegExp(r'/|\\')) + 1);
     var outputPath = '${outputDir.path}/$fileName';
     if (File(outputPath).existsSync()) continue;
-    var image = img.decodeImage(File(file.path).readAsBytesSync());
-    if (image == null) continue;
-    image = encryptImage(image, password);
-    if (image == null) continue; // 表示不需要解密
-    File(outputPath).writeAsBytesSync(img.encodePng(image));
+    queue.add((completer) async {
+      await compute(_enctyptImage, {
+        'imagePath': file.path,
+        'password': password,
+        'savePath': outputPath
+      });
+      completer.complete();
+    });
+    // var image = img.decodeImage(File(file.path).readAsBytesSync());
+    // if (image == null) continue;
+    // image = encryptImage(image, password);
+    // if (image == null) continue; // 表示不需要解密
+    // File(outputPath).writeAsBytesSync(img.encodePng(image));
   }
+  return queue.awaitAll();
+}
+
+void _enctyptImage(Map<String, String> input) {
+  var image = img.decodeImage(File(input['imagePath']!).readAsBytesSync());
+  if (image == null) return;
+  image = dencryptImage(image, input['password']!);
+  if (image == null) return;
+  File(input['savePath']!).writeAsBytesSync(img.encodePng(image));
 }
