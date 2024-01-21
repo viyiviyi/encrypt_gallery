@@ -14,10 +14,46 @@ class AddDirModal extends StatefulWidget {
 class _AddDirModalState extends State<AddDirModal> {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: 400,
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 2),
       child: Column(
         children: [
+          Offstage(
+            offstage: true,
+            child: Column(
+              children: [
+                TextField(
+                  decoration: const InputDecoration(labelText: '共享路径'),
+                  onChanged: (value) {
+                    if (value == '') return;
+                    setState(() {
+                      widget.dir.psw = getSha256(value);
+                    });
+                  },
+                ),
+                TextField(
+                  decoration: const InputDecoration(labelText: '访问账号'),
+                  onChanged: (value) {
+                    if (value == '') return;
+                    setState(() {
+                      widget.dir.psw = getSha256(value);
+                    });
+                  },
+                ),
+                TextField(
+                  decoration: const InputDecoration(labelText: '访问密码'),
+                  onChanged: (value) {
+                    if (value == '') return;
+                    setState(() {
+                      widget.dir.psw = getSha256(value);
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
           Text(widget.dir.rootPath),
           Container(
             alignment: Alignment.bottomRight,

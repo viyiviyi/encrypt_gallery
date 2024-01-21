@@ -373,6 +373,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.1.1"
+  samba_browser:
+    dependency: "direct main"
+    description:
+      name: samba_browser
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.2"
   sky_engine:
     dependency: transitive
     description: flutter

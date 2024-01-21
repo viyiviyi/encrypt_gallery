@@ -19,6 +19,7 @@ class _GalleryState extends State<Gallery> {
     getAllImageDir().then((values) {
       setState(() {
         dirs = values;
+        dirs.sort((l, r) => l.rootPath.compareTo(r.rootPath));
       });
     });
   }

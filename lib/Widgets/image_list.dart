@@ -10,6 +10,7 @@ import 'package:encrypt_gallery/model/provider_status.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:open_dir/open_dir.dart';
 import 'package:provider/provider.dart';
 
@@ -32,7 +33,10 @@ class ImageList extends StatefulWidget {
 class _ImageListState extends State<ImageList> {
   var imageFiles = <FileSystemEntity>[];
   FileSortType sortType = FileSortType.timeDesc;
+  bool loadind = true;
+
   Future loadImages() async {
+    loadind = true;
     imageFiles = [];
     var dir = Directory(widget.imageDir.rootPath);
     if (await dir.exists()) {
@@ -71,6 +75,7 @@ class _ImageListState extends State<ImageList> {
           break;
         default:
       }
+      loadind = false;
     });
   }
 
@@ -130,7 +135,6 @@ class _ImageListState extends State<ImageList> {
     var w = MediaQuery.of(context).size.width;
     var h = MediaQuery.of(context).size.height;
     var wCount = w / min((200 + 20), w / 2);
-    var len = imageFiles.length;
     var workStats = context.watch<WorkStatus>();
     return Scaffold(
       appBar: AppBar(
@@ -237,37 +241,48 @@ class _ImageListState extends State<ImageList> {
           ),
         ],
       ),
-      body: Container(
-          padding: const EdgeInsets.only(bottom: 40, top: 10),
-          child: GridBuilder(
-            count: imageFiles.length,
-            crossAxisCount: wCount.toInt(),
-            renderItem: (int idx) {
-              return ImageItem(
-                key: Key(imageFiles[idx].path),
-                path: imageFiles[idx].path,
-                pwd: widget.imageDir.psw,
-                height: h / 2,
-                fit: BoxFit.fitHeight,
-              );
-            },
-            onTap: (int idx) {
-              navigatorPage(
-                  context,
-                  ImageView(
-                    paths: imageFiles.map((e) => e.path).toList(),
-                    index: idx,
-                    psw: widget.imageDir.psw,
-                  )).then((value) {
-                if (value != null) {
-                  setState(() {
-                    imageFiles =
-                        imageFiles.where((file) => file.path != value).toList();
-                  });
-                }
-              });
-            },
-          )),
+      body: loadind
+          ? Center(
+              child: LoadingAnimationWidget.staggeredDotsWave(
+                  color: Colors.white60, size: 50),
+            )
+          : Container(
+              padding: const EdgeInsets.only(
+                  bottom: 40, top: 10, left: 20, right: 20),
+              child: imageFiles.isEmpty
+                  ? const Center(
+                      child: Text("未在当前目录找到图片"),
+                    )
+                  : GridBuilder(
+                      count: imageFiles.length,
+                      crossAxisCount: wCount.toInt(),
+                      renderItem: (int idx) {
+                        return Container(
+                          padding: const EdgeInsets.all(5),
+                          child: ImageItem(
+                            key: Key(imageFiles[idx].path),
+                            path: imageFiles[idx].path,
+                            pwd: widget.imageDir.psw,
+                            height: h / 2,
+                            fit: BoxFit.fitHeight,
+                          ),
+                        );
+                      },
+                      onTap: (int idx) {
+                        navigatorPage(
+                            context,
+                            ImageView(
+                              paths: imageFiles.map((e) => e.path).toList(),
+                              index: idx,
+                              psw: widget.imageDir.psw,
+                              onDeleteItem: (idx) {
+                                imageFiles.removeAt(idx).delete();
+                              },
+                            )).then((value) {
+                          setState(() {});
+                        });
+                      },
+                    )),
     );
   }
 }

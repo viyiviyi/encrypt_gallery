@@ -15,8 +15,13 @@ class ImageView extends StatefulWidget {
   final List<String> paths;
   late int index;
   final String psw;
+  Function(int idx)? onDeleteItem;
   ImageView(
-      {Key? key, required this.paths, required this.index, required this.psw})
+      {Key? key,
+      required this.paths,
+      required this.index,
+      required this.psw,
+      this.onDeleteItem})
       : super(key: key);
 
   @override
@@ -34,6 +39,7 @@ class _ImageViewState extends State<ImageView> {
       color: Colors.white54, fontSize: 16, fontWeight: FontWeight.normal);
   TextStyle titleTextStyle = const TextStyle(
       color: Colors.white70, fontSize: 18, fontWeight: FontWeight.normal);
+  PhotoViewControllerBase<PhotoViewControllerValue>? controller;
 
   showImage() {
     data = null;
@@ -41,6 +47,12 @@ class _ImageViewState extends State<ImageView> {
     info = {};
     imagePath = widget.paths[widget.index];
     fileName = getPathName(imagePath);
+
+    if (controller != null) {
+      controller!.scale = 1;
+      controller!.position = Offset.zero;
+      controller!.reset();
+    }
     setState(() {});
     getTempDir().then((cachePath) {
       if (image != null) return;
@@ -61,10 +73,12 @@ class _ImageViewState extends State<ImageView> {
       }
     });
     var prvIdx = widget.index;
-    loadImageProviderDisable(widget.paths[
-        widget.index - 2 < 0 ? widget.paths.length - 2 : widget.index - 2]);
-    loadImageProviderDisable(widget
-        .paths[widget.index + 2 >= widget.paths.length ? 1 : widget.index + 2]);
+    if (widget.paths.length > 3) {
+      loadImageProviderDisable(widget.paths[
+          widget.index - 2 < 0 ? widget.paths.length - 2 : widget.index - 2]);
+      loadImageProviderDisable(widget.paths[
+          widget.index + 2 >= widget.paths.length ? 1 : widget.index + 2]);
+    }
     loadImageProvider(LoadArg(path: imagePath, pwd: widget.psw)).then((result) {
       if (prvIdx != widget.index) return;
       if (result.imageProvider != null) {
@@ -110,8 +124,9 @@ class _ImageViewState extends State<ImageView> {
   @override
   void initState() {
     // TODO: implement initState
-    showImage();
     super.initState();
+    showImage();
+    controller = PhotoViewController();
   }
 
   delImage() {
@@ -129,10 +144,17 @@ class _ImageViewState extends State<ImageView> {
               TextButton(
                 child: const Text('确认'),
                 onPressed: () {
-                  File(imagePath).delete().then((value) {
-                    Navigator.of(context).pop(imagePath);
-                    Navigator.of(context).pop(imagePath);
-                  });
+                  if (widget.onDeleteItem != null) {
+                    widget.onDeleteItem!(widget.index);
+                  }
+                  widget.paths.removeAt(widget.index);
+                  if (widget.paths.isEmpty) {
+                    Navigator.of(context).pop(null);
+                    return Navigator.of(context).pop(null);
+                  }
+                  if (widget.index >= widget.paths.length) widget.index = 0;
+                  showImage();
+                  Navigator.of(context).pop(null);
                 },
               ),
             ],
@@ -265,6 +287,10 @@ class _ImageViewState extends State<ImageView> {
             child: data != null
                 ? PhotoView(
                     imageProvider: data,
+                    controller: controller,
+                    gaplessPlayback: true,
+                    loadingBuilder: (context, event) =>
+                        Image.asset('images/load_image.png'),
                   )
                 : Center(
                     child: Column(
@@ -278,21 +304,29 @@ class _ImageViewState extends State<ImageView> {
           ),
           Positioned(
             left: 0,
-            top: MediaQuery.of(context).size.height / 2 - 40 - 20,
+            top: MediaQuery.of(context).size.height / 2 - 40 - 40,
             child: IconButton(
+              padding: const EdgeInsets.only(top: 20, bottom: 20),
               iconSize: 40,
-              icon: const Icon(Icons.arrow_left_rounded),
+              icon: const Icon(
+                Icons.arrow_left_rounded,
+                color: Colors.white60,
+              ),
               onPressed: () {
                 previousImage();
               },
             ),
           ),
           Positioned(
-            top: MediaQuery.of(context).size.height / 2 - 40 - 20,
+            top: MediaQuery.of(context).size.height / 2 - 40 - 40,
             right: 0,
             child: IconButton(
+              padding: const EdgeInsets.only(top: 20, bottom: 20),
               iconSize: 40,
-              icon: const Icon(Icons.arrow_right_rounded),
+              icon: const Icon(
+                Icons.arrow_right_rounded,
+                color: Colors.white60,
+              ),
               onPressed: () {
                 nextImage();
               },

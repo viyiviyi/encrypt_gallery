@@ -130,7 +130,7 @@ class _ImageItemState extends State<ImageItem> {
     if (_image == null) {
       return loading;
     }
-    return GestureDetector(
+    return Center(
       child: _image,
     );
   }
