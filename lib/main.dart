@@ -12,6 +12,8 @@ Future<bool> _checkPermission() async {
   // 先对所在平台进行判断
   if (Platform.isAndroid) {
     await Permission.storage.request();
+    await Permission.photos.request();
+    await Permission.accessMediaLocation.request();
   } else {
     return true;
   }

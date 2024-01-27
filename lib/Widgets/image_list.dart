@@ -10,8 +10,10 @@ import 'package:encrypt_gallery/model/provider_status.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:open_dir/open_dir.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_tool.dart';
@@ -90,38 +92,48 @@ class _ImageListState extends State<ImageList> {
     });
   }
 
-  void dencodeAll(WorkStatus workStatus) {
-    FilePicker.platform
-        .getDirectoryPath(dialogTitle: '指定解密文件存放目录，请勿指定源目录。')
-        .then((value) {
-      if (value != null && value != '/' && value != '') {
-        workStatus.setDencodeIng(true);
-        compute(dencryptAllImage, {
-          'inputPath': widget.imageDir.rootPath,
-          'outputPath': value,
-          'password': widget.imageDir.psw,
-        }).then((value) {
-          workStatus.setDencodeIng(false);
-        });
-      }
-    });
+  void dencodeAll(WorkStatus workStatus) async {
+    var status = await Permission.manageExternalStorage.request();
+    if (status.isGranted) {
+      FilePicker.platform
+          .getDirectoryPath(dialogTitle: '指定解密文件存放目录，请勿指定源目录。')
+          .then((value) {
+        if (value != null && value != '/' && value != '') {
+          workStatus.setDencodeIng(true);
+          compute(dencryptAllImage, {
+            'inputPath': widget.imageDir.rootPath,
+            'outputPath': value,
+            'password': widget.imageDir.psw,
+          }).then((value) {
+            workStatus.setDencodeIng(false);
+          });
+        }
+      });
+    } else {
+      showToast('没有访问权限', context: context);
+    }
   }
 
-  void encodeAll(WorkStatus workStatus) {
-    FilePicker.platform
-        .getDirectoryPath(dialogTitle: '指定加密文件存放目录，请勿指定源目录。')
-        .then((value) {
-      if (value != null && value != '/' && value != '') {
-        workStatus.setEncodeIng(true);
-        compute(encryptAllImage, {
-          'inputPath': widget.imageDir.rootPath,
-          'outputPath': value,
-          'password': widget.imageDir.psw,
-        }).then((value) {
-          workStatus.setEncodeIng(false);
-        });
-      }
-    });
+  void encodeAll(WorkStatus workStatus) async {
+    var status = await Permission.manageExternalStorage.request();
+    if (status.isGranted) {
+      FilePicker.platform
+          .getDirectoryPath(dialogTitle: '指定加密文件存放目录，请勿指定源目录。')
+          .then((value) {
+        if (value != null && value != '/' && value != '') {
+          workStatus.setEncodeIng(true);
+          compute(encryptAllImage, {
+            'inputPath': widget.imageDir.rootPath,
+            'outputPath': value,
+            'password': widget.imageDir.psw,
+          }).then((value) {
+            workStatus.setEncodeIng(false);
+          });
+        }
+      });
+    } else {
+      showToast('没有访问权限', context: context);
+    }
   }
 
   @override
@@ -279,11 +291,14 @@ class _ImageListState extends State<ImageList> {
                               onDeleteItem: (idx) {
                                 imageFiles.removeAt(idx).delete();
                               },
-                            )).then((value) {
-                          setState(() {});
-                        });
+                            )).then(
+                          (value) {
+                            setState(() {});
+                          },
+                        );
                       },
-                    )),
+                    ),
+            ),
     );
   }
 }

@@ -124,10 +124,10 @@ Future dencryptAllImage(Map<String, String> config) async {
   var path = config['inputPath'];
   var outputPath = config['outputPath'];
   var password = config['password'];
+  print('password:$password');
   if (path == null || outputPath == null || password == null) return;
   var dir = Directory(path);
   var outputDir = Directory(outputPath);
-  // var outputDir = Directory('$path/dencrypt_output');
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
   FutureQueue queue = FutureQueue(8);
@@ -135,8 +135,7 @@ Future dencryptAllImage(Map<String, String> config) async {
     if (!RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(file.path)) continue;
     var stat = file.statSync();
     if (stat.type != FileSystemEntityType.file) continue;
-    var fileName =
-        file.path.substring(file.path.lastIndexOf(RegExp(r'/|\\')) + 1);
+    var fileName = getPathName(file.absolute.path);
     var outputPath = '${outputDir.path}/$fileName';
     if (File(outputPath).existsSync()) continue;
     queue.add((completer) async {
@@ -147,12 +146,6 @@ Future dencryptAllImage(Map<String, String> config) async {
       });
       completer.complete();
     });
-
-    // var image = img.decodeImage(File(file.path).readAsBytesSync());
-    // if (image == null) continue;
-    // image = dencryptImage(image, password);
-    // if (image == null) continue;
-    // File(outputPath).writeAsBytesSync(img.encodePng(image));
   }
   return queue.awaitAll();
 }
@@ -172,7 +165,6 @@ Future encryptAllImage(Map<String, String> config) async {
   if (path == null || outputPath == null || password == null) return;
   var dir = Directory(path);
   var outputDir = Directory(outputPath);
-  // var outputDir = Directory('$path/encrypt_output');
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
   FutureQueue queue = FutureQueue(8);
@@ -192,11 +184,6 @@ Future encryptAllImage(Map<String, String> config) async {
       });
       completer.complete();
     });
-    // var image = img.decodeImage(File(file.path).readAsBytesSync());
-    // if (image == null) continue;
-    // image = encryptImage(image, password);
-    // if (image == null) continue; // 表示不需要解密
-    // File(outputPath).writeAsBytesSync(img.encodePng(image));
   }
   return queue.awaitAll();
 }
@@ -204,7 +191,7 @@ Future encryptAllImage(Map<String, String> config) async {
 void _enctyptImage(Map<String, String> input) {
   var image = img.decodeImage(File(input['imagePath']!).readAsBytesSync());
   if (image == null) return;
-  image = dencryptImage(image, input['password']!);
+  image = encryptImage(image, input['password']!);
   if (image == null) return;
   File(input['savePath']!).writeAsBytesSync(img.encodePng(image));
 }

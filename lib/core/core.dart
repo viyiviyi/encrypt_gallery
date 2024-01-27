@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart';
 
 String getRange(String input, int offset, {int rangeLen = 4}) {
@@ -94,7 +95,8 @@ List<List<T>> dencryptImageV2<T>(List<List<T>> arr, String psw) {
 Image? encryptImage(Image image, String pwd) {
   var width = image.width;
   var height = image.height;
-  if ((image.textData != null && image.textData!.containsKey('Encrypt')) ||
+  if (image.textData == null ||
+      !image.textData!.containsKey('Encrypt') ||
       image.textData?['Encrypt'] != 'pixel_shuffle_2') {
     var imgArr = List.generate(
         height, (y) => List.generate(width, (x) => image.getPixel(x, y)));
@@ -112,14 +114,14 @@ Image? encryptImage(Image image, String pwd) {
         newImg.setPixel(x, y, imgArr[y][x]);
       }
     }
-    if (image.textData == null) {
-      image.textData = {
+    if (newImg.textData == null) {
+      newImg.textData = {
         "Encrypt": "pixel_shuffle_2",
         "EncryptPwdSha": getSha256('${pwd}Encrypt') //保存一个用于校验密码是否正确是密码哈希值
       };
     } else {
-      image.textData!['Encrypt'] = 'pixel_shuffle_2';
-      image.textData!['EncryptPwdSha'] = getSha256('${pwd}Encrypt');
+      newImg.textData!['Encrypt'] = 'pixel_shuffle_2';
+      newImg.textData!['EncryptPwdSha'] = getSha256('${pwd}Encrypt');
     }
     return newImg;
   }
@@ -133,6 +135,9 @@ Image? dencryptImage(Image image, String pwd) {
     // 当存在密码哈希属性时检查密码哈希属性的值与当前密码的哈希值是否一致，不一致就不解密
     if (image.textData?['EncryptPwdSha'] != null &&
         image.textData?['EncryptPwdSha'] != getSha256('${pwd}Encrypt')) {
+      if (kDebugMode) {
+        print('密码错误');
+      }
       return null;
     }
     var imgArr = List.generate(
@@ -151,9 +156,13 @@ Image? dencryptImage(Image image, String pwd) {
         newImg.setPixel(x, y, imgArr[y][x]);
       }
     }
-    image.textData?.remove('Encrypt');
-    image.textData!['Dencrypt'] = 'true';
+    newImg.textData?.remove('Encrypt');
+    newImg.textData!['Dencrypt'] = 'true';
     return newImg;
+  } else {
+    if (kDebugMode) {
+      print('非加密图片，无需解密');
+    }
   }
   return null;
 }
