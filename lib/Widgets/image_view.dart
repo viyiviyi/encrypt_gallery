@@ -175,9 +175,6 @@ class _ImageViewState extends State<ImageView> {
                                       widget.onDeleteItem!(widget.index);
                                     }
                                     widget.paths.removeAt(widget.index);
-                                    setState(() {
-                                      delloading = false;
-                                    });
                                     if (widget.paths.isEmpty) {
                                       Navigator.of(context).pop(null);
                                       return Navigator.of(context).pop(null);
@@ -231,6 +228,7 @@ class _ImageViewState extends State<ImageView> {
         },
       ).then((value) => setState(() {
             delloading = false;
+            _pageController = PageController(initialPage: widget.index);
           }));
     });
   }
@@ -257,9 +255,6 @@ class _ImageViewState extends State<ImageView> {
                   widget.onDeleteItem!(widget.index);
                 }
                 widget.paths.removeAt(widget.index);
-                setState(() {
-                  delloading = false;
-                });
                 if (widget.paths.isEmpty) {
                   Navigator.of(context).pop(null);
                   return Navigator.of(context).pop(null);
@@ -274,6 +269,7 @@ class _ImageViewState extends State<ImageView> {
       },
     ).then((value) => setState(() {
           delloading = false;
+          _pageController = PageController(initialPage: widget.index);
         }));
   }
 
