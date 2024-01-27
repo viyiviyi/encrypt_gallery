@@ -12,16 +12,18 @@ class AddDirModal extends StatefulWidget {
 }
 
 class _AddDirModalState extends State<AddDirModal> {
+  String remoteBaseUrl = '';
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 400,
+      height: 200,
       constraints:
           BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 2),
       child: Column(
         children: [
-          Offstage(
-            offstage: true,
+          Visibility(
+            visible: false,
             child: Column(
               children: [
                 TextField(
@@ -29,7 +31,7 @@ class _AddDirModalState extends State<AddDirModal> {
                   onChanged: (value) {
                     if (value == '') return;
                     setState(() {
-                      widget.dir.psw = getSha256(value);
+                      remoteBaseUrl = value;
                     });
                   },
                 ),
@@ -38,7 +40,7 @@ class _AddDirModalState extends State<AddDirModal> {
                   onChanged: (value) {
                     if (value == '') return;
                     setState(() {
-                      widget.dir.psw = getSha256(value);
+                      widget.dir.authUser = value;
                     });
                   },
                 ),
@@ -47,7 +49,7 @@ class _AddDirModalState extends State<AddDirModal> {
                   onChanged: (value) {
                     if (value == '') return;
                     setState(() {
-                      widget.dir.psw = getSha256(value);
+                      widget.dir.authPsw = value;
                     });
                   },
                 ),

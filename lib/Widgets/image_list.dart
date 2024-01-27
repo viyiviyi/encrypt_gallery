@@ -265,6 +265,7 @@ class _ImageListState extends State<ImageList> {
                             pwd: widget.imageDir.psw,
                             height: h / 2,
                             fit: BoxFit.fitHeight,
+                            filterQuality: FilterQuality.medium,
                           ),
                         );
                       },

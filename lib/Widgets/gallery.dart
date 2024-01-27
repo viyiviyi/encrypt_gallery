@@ -1,5 +1,7 @@
+import 'dart:math';
+
+import 'package:encrypt_gallery/Widgets/common/modal_add_dir.dart';
 import 'package:encrypt_gallery/Widgets/image_list.dart';
-import 'package:encrypt_gallery/Widgets/modal_add_dir.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:flutter/material.dart';
@@ -84,6 +86,15 @@ class _GalleryState extends State<Gallery> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   margin: const EdgeInsets.all(10),
+                  width: MediaQuery.of(context).size.width /
+                          ((MediaQuery.of(context).size.width /
+                                  (min(MediaQuery.of(context).size.width - 1,
+                                      400)))
+                              .floor()) -
+                      20,
+                  // constraints: BoxConstraints(
+                  //   minWidth: min(MediaQuery.of(context).size.width, 400),
+                  // ),
                   decoration: BoxDecoration(
                     color: Colors.black87.withOpacity(.3),
                     borderRadius: const BorderRadius.all(
@@ -98,17 +109,12 @@ class _GalleryState extends State<Gallery> {
                       ),
                     ],
                   ),
-                  // width: 300,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(dir.rootPath),
                       const SizedBox(
                         height: 10,
-                      ),
-                      Text(
-                        '解密输出目录：${dir.rootPath}/dencrypt_output',
-                        style: const TextStyle(color: Colors.white54),
                       ),
                     ],
                   ),

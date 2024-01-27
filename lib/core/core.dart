@@ -152,6 +152,7 @@ Image? dencryptImage(Image image, String pwd) {
       }
     }
     image.textData?.remove('Encrypt');
+    image.textData!['Dencrypt'] = 'true';
     return newImg;
   }
   return null;

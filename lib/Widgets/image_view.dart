@@ -1,15 +1,18 @@
 import 'dart:io';
+import 'dart:math';
 
+import 'package:encrypt_gallery/Widgets/common/image_info.dart';
+import 'package:encrypt_gallery/Widgets/common/image_page.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
+import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:image/image.dart' as img;
-import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 
 class ImageView extends StatefulWidget {
   final List<String> paths;
@@ -30,308 +33,425 @@ class ImageView extends StatefulWidget {
 
 class _ImageViewState extends State<ImageView> {
   String imagePath = '';
-  ImageProvider? data;
-  img.Image? image;
   String fileName = '';
-
   Map<String, String> info = {};
-  TextStyle contentTextStyle = const TextStyle(
-      color: Colors.white54, fontSize: 16, fontWeight: FontWeight.normal);
-  TextStyle titleTextStyle = const TextStyle(
-      color: Colors.white70, fontSize: 18, fontWeight: FontWeight.normal);
-  PhotoViewControllerBase<PhotoViewControllerValue>? controller;
-
+  late PageController _pageController;
+  bool showActions = true;
+  var delloading = false;
   showImage() {
-    data = null;
-    image = null;
-    info = {};
-    imagePath = widget.paths[widget.index];
-    fileName = getPathName(imagePath);
-
-    if (controller != null) {
-      controller!.scale = 1;
-      controller!.position = Offset.zero;
-      controller!.reset();
-    }
-    setState(() {});
-    getTempDir().then((cachePath) {
-      if (image != null) return;
-      var thumbnailPath =
-          getThumbnailPath(cachePath.absolute.path, imagePath, widget.psw);
-      var imgFile = File(thumbnailPath);
-      if (imgFile.existsSync()) {
-        try {
-          setState(() {
-            data = FileImage(imgFile);
-          });
-          return;
-        } catch (e) {
-          if (kDebugMode) {
-            print('缩略图读取失败');
-          }
-        }
-      }
+    setState(() {
+      imagePath = widget.paths[widget.index];
+      fileName = getPathName(imagePath);
     });
-    var prvIdx = widget.index;
-    if (widget.paths.length > 3) {
-      loadImageProviderDisable(widget.paths[
-          widget.index - 2 < 0 ? widget.paths.length - 2 : widget.index - 2]);
-      loadImageProviderDisable(widget.paths[
-          widget.index + 2 >= widget.paths.length ? 1 : widget.index + 2]);
-    }
-    loadImageProvider(LoadArg(path: imagePath, pwd: widget.psw)).then((result) {
-      if (prvIdx != widget.index) return;
-      if (result.imageProvider != null) {
-        setState(() {
-          data = result.imageProvider;
-        });
-      }
-      var image = result.image;
-      if (image == null) return;
-      this.image = image;
-      if (image.textData != null) {
-        image.textData!.forEach((key, value) {
-          info[key] = value;
-        });
-      }
-      if (image.hasExif) {
-        image.exif.directories.forEach((key, value) {
-          if (info.containsKey(key)) {
-            info[key] =
-                '${info[key]!}\n\n${value.data.values.map((e) => e.toString()).join('\n')}';
-          }
-        });
-      }
-      setState(() {});
-    });
-    loadImageProvider(LoadArg(
-        path: widget.paths[
-            widget.index - 1 < 0 ? widget.paths.length - 1 : widget.index - 1],
-        pwd: widget.psw));
-    loadImageProvider(LoadArg(
-        path: widget.paths[
-            widget.index + 1 >= widget.paths.length ? 0 : widget.index + 1],
-        pwd: widget.psw));
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    loadImageProviderDisable(imagePath);
-    super.dispose();
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    showImage();
-    controller = PhotoViewController();
+    imagePath = widget.paths[widget.index];
+    fileName = getPathName(imagePath);
+    _pageController = PageController(initialPage: widget.index);
   }
 
-  delImage() {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('删除提示'),
-            content: const Text('将会从磁盘中删除文件'),
-            actions: [
-              TextButton(
-                child: const Text('取消'),
-                onPressed: () => Navigator.of(context).pop(null),
-              ),
-              TextButton(
-                child: const Text('确认'),
-                onPressed: () {
-                  if (widget.onDeleteItem != null) {
-                    widget.onDeleteItem!(widget.index);
-                  }
-                  widget.paths.removeAt(widget.index);
-                  if (widget.paths.isEmpty) {
-                    Navigator.of(context).pop(null);
-                    return Navigator.of(context).pop(null);
-                  }
-                  if (widget.index >= widget.paths.length) widget.index = 0;
-                  showImage();
-                  Navigator.of(context).pop(null);
-                },
-              ),
-            ],
-          );
-        });
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   nextImage() {
     widget.index += 1;
-    if (widget.index >= widget.paths.length) widget.index = 0;
+    if (widget.index >= widget.paths.length) {
+      widget.index = 0;
+      _pageController.jumpToPage(widget.index);
+    }
     showImage();
+    _pageController.animateToPage(widget.index,
+        duration: const Duration(milliseconds: 420), curve: Curves.easeInOut);
   }
 
   previousImage() {
     widget.index -= 1;
-    if (widget.index <= 0) widget.index = widget.paths.length - 1;
+    if (widget.index <= 0) {
+      widget.index = widget.paths.length - 1;
+      _pageController.jumpToPage(widget.index);
+    }
     showImage();
+    _pageController.animateToPage(widget.index,
+        duration: const Duration(milliseconds: 420), curve: Curves.easeInOut);
   }
 
   showInfoModal(BuildContext context) {
     showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('图片信息 (点击可复制)'),
+          content: EnImageInfo(
+            imagePath: imagePath,
+            psw: widget.psw,
+          ),
+          actions: [
+            TextButton(
+              child: const Text('关闭'),
+              onPressed: () => Navigator.of(context).pop(null),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void saveImage() {
+    FilePicker.platform
+        .saveFile(fileName: fileName, type: FileType.image)
+        .then((path) {
+      if (path != null) {
+        loadImageProvider(LoadArg(path: imagePath, pwd: widget.psw))
+            .then((result) {
+          var image = result.image;
+          if (image == null) return;
+          File(path).writeAsBytesSync(img.encodePng(image));
+        });
+      }
+    });
+  }
+
+  void moveImage(bool move) {
+    getAllImageDir().then((values) {
+      var dirs = values;
+      dirs.sort((l, r) => l.rootPath.compareTo(r.rootPath));
+      setState(() {
+        delloading = true;
+      });
+      showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('图片信息 (点击可复制)'),
-            content: SingleChildScrollView(
+            title: const Text('移动图片'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 500,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '路径: ',
-                        style: titleTextStyle,
-                      ),
-                      Text(
-                        imagePath,
-                        style: contentTextStyle,
-                      )
-                    ],
+                  Container(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: const Text('请选择目标目录，如果原图片已加密，将会使用目标目录的密码加密保存。'),
                   ),
-                  ...info.keys.map((key) {
-                    var value = info[key];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Expanded(
+                    flex: 1,
+                    child: ListView(
                       children: [
-                        Text(
-                          '$key:',
-                          style: titleTextStyle,
-                        ),
-                        Text.rich(
-                          TextSpan(
-                            text: value!,
-                            style: contentTextStyle,
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                Clipboard.setData(ClipboardData(text: value));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('已复制到剪切板')));
-                              },
-                          ),
-                        )
+                        ...dirs.map((dir) {
+                          return GestureDetector(
+                            onTap: () {
+                              if (File('${dir.rootPath}/$fileName')
+                                  .existsSync()) {
+                                Navigator.pop(context);
+                                showToast('目标目录已存在同名文件，取消移动',
+                                    context: context,
+                                    axis: Axis.horizontal,
+                                    alignment: Alignment.center,
+                                    position: StyledToastPosition.center);
+                                return;
+                              }
+                              loadImageProvider(
+                                      LoadArg(path: imagePath, pwd: widget.psw))
+                                  .then((result) {
+                                var image = result.image;
+                                if (image == null) return;
+                                Future.value(() {
+                                  if (image.textData?['Dencrypt'] == 'true') {
+                                    return encryptImage(image, dir.psw);
+                                  }
+                                  return image;
+                                }).then((imageVal) {
+                                  var eImg = imageVal();
+                                  if (eImg == null) return;
+                                  File('${dir.rootPath}/$fileName')
+                                      .writeAsBytesSync(img.encodePng(eImg));
+                                  if (move) {
+                                    if (widget.onDeleteItem != null) {
+                                      widget.onDeleteItem!(widget.index);
+                                    }
+                                    widget.paths.removeAt(widget.index);
+                                    setState(() {
+                                      delloading = false;
+                                    });
+                                    if (widget.paths.isEmpty) {
+                                      Navigator.of(context).pop(null);
+                                      return Navigator.of(context).pop(null);
+                                    }
+                                    if (widget.index >= widget.paths.length) {
+                                      widget.index = 0;
+                                    }
+                                    Navigator.of(context).pop(null);
+                                    showImage();
+                                  }
+                                });
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              margin: const EdgeInsets.all(10),
+                              constraints: BoxConstraints(
+                                  minWidth: min(
+                                      MediaQuery.of(context).size.width, 300)),
+                              decoration: BoxDecoration(
+                                color: Colors.black87.withOpacity(.3),
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(10)), // 设置圆角半径为10
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(dir.rootPath),
+                                  const SizedBox(
+                                    height: 10,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ],
-                    );
-                  }).toList()
+                    ),
+                  ),
                 ],
               ),
             ),
             actions: [
               TextButton(
-                child: const Text('关闭'),
-                onPressed: () => Navigator.of(context).pop(null),
-              ),
+                  onPressed: () {
+                    Navigator.of(context).pop(null);
+                  },
+                  child: const Text('取消'))
             ],
           );
-        });
+        },
+      ).then((value) => setState(() {
+            delloading = false;
+          }));
+    });
+  }
+
+  delImage() {
+    setState(() {
+      delloading = true;
+    });
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('删除提示'),
+          content: const Text('将会从磁盘中删除文件'),
+          actions: [
+            TextButton(
+              child: const Text('取消'),
+              onPressed: () => Navigator.of(context).pop(null),
+            ),
+            TextButton(
+              child: const Text('确认'),
+              onPressed: () {
+                if (widget.onDeleteItem != null) {
+                  widget.onDeleteItem!(widget.index);
+                }
+                widget.paths.removeAt(widget.index);
+                setState(() {
+                  delloading = false;
+                });
+                if (widget.paths.isEmpty) {
+                  Navigator.of(context).pop(null);
+                  return Navigator.of(context).pop(null);
+                }
+                if (widget.index >= widget.paths.length) widget.index = 0;
+                showImage();
+                Navigator.of(context).pop(null);
+              },
+            ),
+          ],
+        );
+      },
+    ).then((value) => setState(() {
+          delloading = false;
+        }));
   }
 
   @override
   Widget build(BuildContext context) {
+    // 显示和隐藏状态栏
+    SystemChrome.setEnabledSystemUIMode(
+        showActions ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(fileName),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (String value) {
-              switch (value) {
-                case '1':
-                  showInfoModal(context);
-                  break;
-                case '2':
-                  FilePicker.platform
-                      .saveFile(fileName: fileName, type: FileType.image)
-                      .then((path) {
-                    if (path != null && image != null) {
-                      File(path).writeAsBytesSync(img.encodePng(image!));
-                    }
-                  });
-                  break;
-                case '3':
-                  delImage();
-                  break;
-                default:
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: '1',
-                child: Text('查看图片信息'),
-              ),
-              const PopupMenuItem<String>(
-                value: '2',
-                child: Text('保存图片'),
-              ),
-              const PopupMenuItem<String>(
-                value: '3',
-                child: Text('删除'),
-              ),
-            ],
-          ),
-        ],
-      ),
+      appBar: null,
       body: Stack(
         alignment: Alignment.center,
         // 设置填充方式展接受父类约束最大值
         fit: StackFit.expand,
         children: [
-          Container(
-            child: data != null
-                ? PhotoView(
-                    imageProvider: data,
-                    controller: controller,
-                    gaplessPlayback: true,
-                    loadingBuilder: (context, event) =>
-                        Image.asset('images/load_image.png'),
-                  )
-                : Center(
-                    child: Column(
-                      children: [
-                        Image.asset('images/load_image.png'),
-                        LoadingAnimationWidget.staggeredDotsWave(
-                            color: Colors.white60, size: 50)
-                      ],
-                    ),
-                  ),
-          ),
+          delloading
+              ? EnImagePage(
+                  // 在删除的时候仅显示当前图片，删除完成后可以重绘pageview，解决pageview不刷新问题
+                  imagePath: imagePath,
+                  psw: widget.psw,
+                  onTap: () {
+                    setState(() {
+                      showActions = !showActions;
+                    });
+                  },
+                )
+              : PhotoViewGallery.builder(
+                  pageController: _pageController,
+                  itemCount: widget.paths.length,
+                  allowImplicitScrolling: true,
+                  onPageChanged: (index) {
+                    widget.index = index;
+                    showImage();
+                  },
+                  builder: ((context, index) {
+                    return PhotoViewGalleryPageOptions.customChild(
+                      child: EnImagePage(
+                        imagePath: widget.paths[index],
+                        psw: widget.psw,
+                        onTap: () {
+                          setState(() {
+                            showActions = !showActions;
+                          });
+                        },
+                      ),
+                    );
+                  }),
+                ),
           Positioned(
             left: 0,
             top: MediaQuery.of(context).size.height / 2 - 40 - 40,
-            child: IconButton(
-              padding: const EdgeInsets.only(top: 20, bottom: 20),
-              iconSize: 40,
-              icon: const Icon(
-                Icons.arrow_left_rounded,
-                color: Colors.white60,
+            child: Opacity(
+              opacity: showActions ? 1 : 0,
+              child: IconButton(
+                padding: const EdgeInsets.only(top: 20, bottom: 20),
+                iconSize: 40,
+                icon: const Icon(
+                  Icons.arrow_left_rounded,
+                  color: Colors.white60,
+                ),
+                onPressed: () {
+                  previousImage();
+                },
               ),
-              onPressed: () {
-                previousImage();
-              },
             ),
           ),
           Positioned(
             top: MediaQuery.of(context).size.height / 2 - 40 - 40,
             right: 0,
-            child: IconButton(
-              padding: const EdgeInsets.only(top: 20, bottom: 20),
-              iconSize: 40,
-              icon: const Icon(
-                Icons.arrow_right_rounded,
-                color: Colors.white60,
+            child: Opacity(
+              opacity: showActions ? 1 : 0,
+              child: IconButton(
+                padding: const EdgeInsets.only(top: 20, bottom: 20),
+                iconSize: 40,
+                icon: const Icon(
+                  Icons.arrow_right_rounded,
+                  color: Colors.white60,
+                ),
+                onPressed: () {
+                  nextImage();
+                },
               ),
-              onPressed: () {
-                nextImage();
-              },
             ),
           ),
+          Visibility(
+            visible: showActions,
+            child: Positioned(
+              bottom: 20,
+              width: MediaQuery.of(context).size.width,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      moveImage(true);
+                    },
+                    icon: const Icon(Icons.move_to_inbox_outlined),
+                  ),
+                  Visibility(
+                    visible: Platform.isWindows || Platform.isLinux,
+                    child: IconButton(
+                      onPressed: () {
+                        saveImage();
+                      },
+                      icon: const Icon(Icons.save_as_outlined),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      delImage();
+                    },
+                    icon: const Icon(Icons.delete_outline_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Visibility(
+            visible: showActions,
+            child: Positioned(
+              top: Platform.isAndroid || Platform.isIOS ? 30 : 0,
+              left: 0,
+              height: 50,
+              width: MediaQuery.of(context).size.width,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.arrow_back_outlined)),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      fileName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (String value) {
+                      switch (value) {
+                        case '1':
+                          showInfoModal(context);
+                          break;
+                        case '2':
+                          saveImage();
+                          break;
+                        case '3':
+                          delImage();
+                          break;
+                        default:
+                      }
+                    },
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: '1',
+                        child: Text('查看图片信息'),
+                      ),
+                      ...(Platform.isWindows || Platform.isLinux
+                          ? [
+                              const PopupMenuItem<String>(
+                                value: '2',
+                                child: Text('保存图片'),
+                              )
+                            ]
+                          : []),
+                      const PopupMenuItem<String>(
+                        value: '3',
+                        child: Text('删除'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          )
         ],
       ),
     );

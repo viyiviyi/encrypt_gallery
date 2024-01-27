@@ -77,9 +77,13 @@ LoadResult _loadImageProvider(LoadArg config) {
   return LoadResult(image, provider);
 }
 
+Uint8List imgToUint8List(img.Image image) {
+  return img.encodeJpg(image, quality: 100, chroma: img.JpegChroma.yuv444);
+}
+
 // 加载图片Image对象
 img.Image? loadImage(LoadArg config) {
-  var file = File(config.path);
+  File file = File(config.path);
   if (!file.existsSync()) {
     if (kDebugMode) {
       print('文件 ${config.path} 不存在');

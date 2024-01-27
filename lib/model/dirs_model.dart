@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:encrypt/encrypt.dart';
 import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/core/hive_box.dart';
 import 'package:hive/hive.dart';
@@ -7,17 +8,44 @@ import 'package:hive/hive.dart';
 class ImageDir {
   String rootPath;
   String psw;
+  String? authUser;
+  String? authPsw;
   ImageDir({required this.rootPath, required this.psw});
 
   static ImageDir fromJson(dynamic data) {
     ImageDir imageDir = ImageDir(rootPath: data['rootPath'], psw: data['psw']);
+    imageDir.authPsw =
+        data['authPsw'] != null ? _dencode(data['authPsw']) : null;
+    imageDir.authUser = data['authUser'];
     return imageDir;
+  }
+
+  static _encode(String input) {
+    if (input == '') return;
+    final key = Key.fromUtf8('ajjdheu784neurh');
+    final iv = IV.fromUtf8('dsdbh7ye');
+    final encrypter = Encrypter(Salsa20(key));
+
+    final encrypted = encrypter.encrypt(input, iv: iv);
+    return encrypted.base64;
+  }
+
+  static _dencode(String input) {
+    if (input == '') return;
+    final key = Key.fromUtf8('ajjdheu784neurh');
+    final iv = IV.fromUtf8('dsdbh7ye');
+    final encrypter = Encrypter(Salsa20(key));
+    final encrypted = Encrypted.fromUtf8(input);
+    final decrypted = encrypter.decrypt(encrypted, iv: iv);
+    return decrypted;
   }
 
   dynamic toJson() {
     return {
-      'rootPath': this.rootPath,
-      'psw': this.psw,
+      'rootPath': rootPath,
+      'psw': psw,
+      'authUser': authUser,
+      'authPsw': authPsw != null ? _encode(authPsw!) : '',
     };
   }
 
