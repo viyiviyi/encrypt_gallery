@@ -2,6 +2,8 @@ import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_styled_toast/flutter_styled_toast.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AddDirModal extends StatefulWidget {
   ImageDir dir = ImageDir(rootPath: '', psw: '');
@@ -61,10 +63,15 @@ class _AddDirModalState extends State<AddDirModal> {
             alignment: Alignment.bottomRight,
             child: TextButton(
               onPressed: () {
-                FilePicker.platform.getDirectoryPath().then((value) {
-                  setState(() {
-                    widget.dir.rootPath = value ?? '';
-                  });
+                Permission.manageExternalStorage.request().then((status) {
+                  if (status.isGranted) {
+                    FilePicker.platform.getDirectoryPath().then((value) {
+                      setState(() {
+                        widget.dir.rootPath = value ?? '';
+                      });
+                    });
+                  } else {}
+                  showToast('没有访问权限', context: context);
                 });
               },
               child: const Text('选择目录'),

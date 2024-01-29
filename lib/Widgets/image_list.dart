@@ -92,48 +92,50 @@ class _ImageListState extends State<ImageList> {
     });
   }
 
-  void dencodeAll(WorkStatus workStatus) async {
-    var status = await Permission.manageExternalStorage.request();
-    if (status.isGranted) {
-      FilePicker.platform
-          .getDirectoryPath(dialogTitle: '指定解密文件存放目录，请勿指定源目录。')
-          .then((value) {
-        if (value != null && value != '/' && value != '') {
-          workStatus.setDencodeIng(true);
-          compute(dencryptAllImage, {
-            'inputPath': widget.imageDir.rootPath,
-            'outputPath': value,
-            'password': widget.imageDir.psw,
-          }).then((value) {
-            workStatus.setDencodeIng(false);
-          });
-        }
-      });
-    } else {
-      showToast('没有访问权限', context: context);
-    }
+  void dencodeAll(WorkStatus workStatus) {
+    Permission.manageExternalStorage.request().then((status) {
+      if (status.isGranted) {
+        FilePicker.platform
+            .getDirectoryPath(dialogTitle: '指定解密文件存放目录，请勿指定源目录。')
+            .then((value) {
+          if (value != null && value != '/' && value != '') {
+            workStatus.setDencodeIng(true);
+            compute(dencryptAllImage, {
+              'inputPath': widget.imageDir.rootPath,
+              'outputPath': value,
+              'password': widget.imageDir.psw,
+            }).then((value) {
+              workStatus.setDencodeIng(false);
+            });
+          }
+        });
+      } else {
+        showToast('没有访问权限', context: context);
+      }
+    });
   }
 
-  void encodeAll(WorkStatus workStatus) async {
-    var status = await Permission.manageExternalStorage.request();
-    if (status.isGranted) {
-      FilePicker.platform
-          .getDirectoryPath(dialogTitle: '指定加密文件存放目录，请勿指定源目录。')
-          .then((value) {
-        if (value != null && value != '/' && value != '') {
-          workStatus.setEncodeIng(true);
-          compute(encryptAllImage, {
-            'inputPath': widget.imageDir.rootPath,
-            'outputPath': value,
-            'password': widget.imageDir.psw,
-          }).then((value) {
-            workStatus.setEncodeIng(false);
-          });
-        }
-      });
-    } else {
-      showToast('没有访问权限', context: context);
-    }
+  void encodeAll(WorkStatus workStatus) {
+    Permission.manageExternalStorage.request().then((status) {
+      if (status.isGranted) {
+        FilePicker.platform
+            .getDirectoryPath(dialogTitle: '指定加密文件存放目录，请勿指定源目录。')
+            .then((value) {
+          if (value != null && value != '/' && value != '') {
+            workStatus.setEncodeIng(true);
+            compute(encryptAllImage, {
+              'inputPath': widget.imageDir.rootPath,
+              'outputPath': value,
+              'password': widget.imageDir.psw,
+            }).then((value) {
+              workStatus.setEncodeIng(false);
+            });
+          }
+        });
+      } else {
+        showToast('没有访问权限', context: context);
+      }
+    });
   }
 
   @override

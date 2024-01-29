@@ -24,25 +24,12 @@ class _EnImagePageState extends State<EnImagePage> {
   ImageProvider? thumbnail;
   int width = 0;
   late PhotoViewControllerBase<PhotoViewControllerValue> controller;
-  showImage() {
-    getTempDir().then((cachePath) {
-      var thumbnailPath = getThumbnailPath(
-          cachePath.absolute.path, widget.imagePath, widget.psw);
-      var imgFile = File(thumbnailPath);
-      if (imgFile.existsSync()) {
-        try {
-          setState(() {
-            thumbnail = FileImage(imgFile);
-          });
-          return;
-        } catch (e) {
-          if (kDebugMode) {
-            print('缩略图读取失败');
-          }
-        }
-      }
-    });
-    loadImageProvider(LoadArg(path: widget.imagePath, pwd: widget.psw))
+  showImage() async {
+    var cachePath = await getTempDir();
+    loadImageProvider(LoadArg(
+            path: widget.imagePath,
+            pwd: widget.psw,
+            cachePath: cachePath.absolute.path))
         .then((result) {
       if (result.imageProvider != null) {
         setState(() {
@@ -51,6 +38,21 @@ class _EnImagePageState extends State<EnImagePage> {
         });
       }
     });
+    var thumbnailPath =
+        getThumbnailPath(cachePath.absolute.path, widget.imagePath, widget.psw);
+    var imgFile = File(thumbnailPath);
+    if (imgFile.existsSync()) {
+      try {
+        setState(() {
+          thumbnail = FileImage(imgFile);
+        });
+        return;
+      } catch (e) {
+        if (kDebugMode) {
+          print('缩略图读取失败');
+        }
+      }
+    }
   }
 
   @override
@@ -76,7 +78,7 @@ class _EnImagePageState extends State<EnImagePage> {
               onTapDown: (context, details, controllerValue) {
                 widget.onTap?.call();
               },
-              filterQuality: FilterQuality.medium,
+              filterQuality: FilterQuality.high,
               gaplessPlayback: true,
               loadingBuilder: (context, event) =>
                   Image.asset('images/load_image.png'),

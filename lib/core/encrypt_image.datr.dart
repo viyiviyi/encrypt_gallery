@@ -28,7 +28,7 @@ List<String> _historyKey = [];
 Future<LoadResult> loadImageProvider(LoadArg config) async {
   if (_history[config.path] != null) return _history[config.path]!;
   if (_loadImageProviderCache[config.path] != null) {
-    return _loadImageProviderCache[config.path]!;
+    return await _loadImageProviderCache[config.path]!;
   }
   var future = _loadImageProviderQueue.add<LoadResult>((completer) async {
     if (completer.isCompleted) return;
@@ -66,12 +66,14 @@ LoadResult _loadImageProvider(LoadArg config) {
       // 如果是宽图，则让缩略图的高保持在200
       thumbnailWidth = 512 * image.width ~/ image.height;
     }
-    var thumbnail = img.copyResize(image, width: thumbnailWidth);
-    var thumbnailPath =
-        getThumbnailPath(config.cachePath!, config.path, config.pwd);
-    var imgFile = File(thumbnailPath);
-    imgFile.writeAsBytesSync(
-        img.encodeJpg(thumbnail, quality: 80, chroma: img.JpegChroma.yuv420));
+    Future.sync(() {
+      var thumbnail = img.copyResize(image, width: thumbnailWidth);
+      var thumbnailPath =
+          getThumbnailPath(config.cachePath!, config.path, config.pwd);
+      var imgFile = File(thumbnailPath);
+      imgFile.writeAsBytesSync(
+          img.encodeJpg(thumbnail, quality: 80, chroma: img.JpegChroma.yuv420));
+    }).then((value) => null);
   }
   var provider = imageToImageProvider(image);
   return LoadResult(image, provider);
@@ -124,7 +126,6 @@ Future dencryptAllImage(Map<String, String> config) async {
   var path = config['inputPath'];
   var outputPath = config['outputPath'];
   var password = config['password'];
-  print('password:$password');
   if (path == null || outputPath == null || password == null) return;
   var dir = Directory(path);
   var outputDir = Directory(outputPath);

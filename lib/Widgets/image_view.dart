@@ -60,6 +60,7 @@ class _ImageViewState extends State<ImageView> {
   }
 
   nextImage() {
+    loadNext(widget.index, widget.index + 1);
     widget.index += 1;
     if (widget.index >= widget.paths.length) {
       widget.index = 0;
@@ -71,6 +72,7 @@ class _ImageViewState extends State<ImageView> {
   }
 
   previousImage() {
+    loadNext(widget.index, widget.index - 1);
     widget.index -= 1;
     if (widget.index <= 0) {
       widget.index = widget.paths.length - 1;
@@ -113,6 +115,27 @@ class _ImageViewState extends State<ImageView> {
           if (image == null) return;
           File(path).writeAsBytesSync(img.encodePng(image));
         });
+      }
+    });
+  }
+
+  void loadNext(int currentIndex, int nextIndex) {
+    getTempDir().then((cachePath) {
+      var d = currentIndex < nextIndex ? 1 : -1;
+      for (var i = 0; i < 5; i += d) {
+        // 预加载后面几张图片
+        var idx = currentIndex + (i + 1) * d;
+        if (d > 0 && idx >= widget.paths.length) {
+          return;
+        } else if (d < 0 && idx < 0) {
+          return;
+        }
+        var cPath = widget.paths[idx];
+        loadImageProvider(LoadArg(
+                path: cPath,
+                pwd: widget.psw,
+                cachePath: cachePath.absolute.path))
+            .then((result) {});
       }
     });
   }
@@ -174,11 +197,12 @@ class _ImageViewState extends State<ImageView> {
                                     if (widget.onDeleteItem != null) {
                                       widget.onDeleteItem!(widget.index);
                                     }
-                                    widget.paths.removeAt(widget.index);
+                                    loadNext(widget.index, widget.index + 1);
                                     if (widget.paths.isEmpty) {
                                       Navigator.of(context).pop(null);
                                       return Navigator.of(context).pop(null);
                                     }
+                                    widget.paths.removeAt(widget.index);
                                     if (widget.index >= widget.paths.length) {
                                       widget.index = 0;
                                     }
@@ -259,6 +283,7 @@ class _ImageViewState extends State<ImageView> {
                   Navigator.of(context).pop(null);
                   return Navigator.of(context).pop(null);
                 }
+                loadNext(widget.index, widget.index + 1);
                 if (widget.index >= widget.paths.length) widget.index = 0;
                 showImage();
                 Navigator.of(context).pop(null);
@@ -301,6 +326,7 @@ class _ImageViewState extends State<ImageView> {
                   itemCount: widget.paths.length,
                   allowImplicitScrolling: true,
                   onPageChanged: (index) {
+                    loadNext(widget.index, index);
                     widget.index = index;
                     showImage();
                   },
@@ -362,6 +388,15 @@ class _ImageViewState extends State<ImageView> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
+                  // IconButton(
+                  //     onPressed: () {
+                  //       navigatorPage(
+                  //               context,
+                  //               ImageEditor(
+                  //                   imagePath: imagePath, psw: widget.psw))
+                  //           .then((value) => null);
+                  //     },
+                  //     icon: const Icon(Icons.photo_size_select_large_outlined),),
                   IconButton(
                     onPressed: () {
                       moveImage(true);
@@ -405,7 +440,7 @@ class _ImageViewState extends State<ImageView> {
                   Expanded(
                     flex: 1,
                     child: Text(
-                      fileName,
+                      '${widget.index + 1}/${widget.paths.length} $fileName',
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
