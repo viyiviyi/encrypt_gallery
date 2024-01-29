@@ -295,7 +295,7 @@ class _ImageListState extends State<ImageList> {
                               },
                             )).then(
                           (value) {
-                            setState(() {});
+                            loadImages();
                           },
                         );
                       },

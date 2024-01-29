@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:encrypt_gallery/Widgets/common/image_editor.dart';
 import 'package:encrypt_gallery/Widgets/common/image_info.dart';
 import 'package:encrypt_gallery/Widgets/common/image_page.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
@@ -388,30 +389,45 @@ class _ImageViewState extends State<ImageView> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // IconButton(
-                  //     onPressed: () {
-                  //       navigatorPage(
-                  //               context,
-                  //               ImageEditor(
-                  //                   imagePath: imagePath, psw: widget.psw))
-                  //           .then((value) => null);
-                  //     },
-                  //     icon: const Icon(Icons.photo_size_select_large_outlined),),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        delloading = true;
+                      });
+                      navigatorPage(
+                        context,
+                        ImageEditor(imagePath: imagePath, psw: widget.psw),
+                      ).then((path) {
+                        if (path != null) {
+                          widget.paths.insert(widget.index + 1, path as String);
+                          setState(() {
+                            widget.index += 1;
+                            delloading = false;
+                            _pageController =
+                                PageController(initialPage: widget.index);
+                            showImage();
+                          });
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.photo_size_select_large_outlined),
+                  ),
                   IconButton(
                     onPressed: () {
                       moveImage(true);
                     },
                     icon: const Icon(Icons.move_to_inbox_outlined),
                   ),
-                  Visibility(
-                    visible: Platform.isWindows || Platform.isLinux,
-                    child: IconButton(
-                      onPressed: () {
-                        saveImage();
-                      },
-                      icon: const Icon(Icons.save_as_outlined),
-                    ),
-                  ),
+                  ...(Platform.isWindows || Platform.isLinux
+                      ? [
+                          IconButton(
+                            onPressed: () {
+                              saveImage();
+                            },
+                            icon: const Icon(Icons.save_as_outlined),
+                          )
+                        ]
+                      : []),
                   IconButton(
                     onPressed: () {
                       delImage();
