@@ -28,7 +28,12 @@ List<String> _historyKey = [];
 Future<LoadResult> loadImageProvider(LoadArg config) async {
   if (_history[config.path] != null) return _history[config.path]!;
   if (_loadImageProviderCache[config.path] != null) {
-    return await _loadImageProviderCache[config.path]!;
+    if (_loadImageProviderQueue
+        .isRuning(_loadImageProviderCache[config.path]!)) {
+      return await _loadImageProviderCache[config.path]!;
+    } else {
+      _loadImageProviderQueue.dispose(_loadImageProviderCache[config.path]!);
+    }
   }
   var future = _loadImageProviderQueue.add<LoadResult>((completer) async {
     if (completer.isCompleted) return;

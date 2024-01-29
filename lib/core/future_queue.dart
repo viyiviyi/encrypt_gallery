@@ -4,6 +4,7 @@ class FutureQueue {
   final List<MapEntry<Completer, Function(Completer<dynamic>)>> _queue = [];
   final Map<Future, Completer> _map = {};
   final List<Completer> _waiting = [];
+  final Map<Completer, bool> _runing = {};
   late int max = 6;
   int _runningCount = 0;
 
@@ -12,10 +13,14 @@ class FutureQueue {
   Future<T> add<T>(Function(Completer completer) run) {
     Completer<T> completer = Completer<T>();
     Future<T> future = completer.future;
-    _queue.add(MapEntry(completer, run));
+    _queue.insert(0, MapEntry(completer, run));
     _runNext();
     _map[future] = completer;
     return future;
+  }
+
+  bool isRuning(Future future) {
+    return _runing.containsKey(_map[future]);
   }
 
   void dispose(Future future) {
@@ -45,8 +50,10 @@ class FutureQueue {
     if (_runningCount >= max || _queue.isEmpty) return;
     _runningCount++;
     final future = _queue.removeAt(0);
+    _runing[future.key] = true;
     Future.sync(() => future.value(future.key)).then((value) {
       _runningCount--;
+      _runing.remove(future);
       _runNext();
     });
   }

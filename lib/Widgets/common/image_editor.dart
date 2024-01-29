@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:encrypt_gallery/core/image_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
@@ -10,7 +11,8 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 class ImageEditor extends StatefulWidget {
   final String imagePath;
   final String psw;
-  const ImageEditor({
+  late bool hasEncrypt = false;
+  ImageEditor({
     Key? key,
     required this.imagePath,
     required this.psw,
@@ -37,6 +39,7 @@ class _ImageEditorState extends State<ImageEditor> {
       if (result.image != null) {
         width = result.image!.width;
         height = result.image!.height;
+        widget.hasEncrypt = result.image?.textData?['Dencrypt'] == 'true';
         compute((image) => img.encodePng(image), result.image!).then((value) {
           setState(() {
             data = value;
@@ -63,9 +66,9 @@ class _ImageEditorState extends State<ImageEditor> {
         break;
       }
     }
-    File(savePath)
-        .writeAsBytes(image)
-        .then((value) => Navigator.pop(context, value.absolute.path));
+    compute(saveUint8ListImage,
+            SaveUint8ListImageArgs(savePath: savePath, data: image))
+        .then((value) => Navigator.pop(context, savePath));
   }
 
   Widget loadingWidget() {

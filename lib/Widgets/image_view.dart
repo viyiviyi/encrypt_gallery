@@ -207,9 +207,9 @@ class _ImageViewState extends State<ImageView> {
                                     if (widget.index >= widget.paths.length) {
                                       widget.index = 0;
                                     }
-                                    Navigator.of(context).pop(null);
-                                    showImage();
                                   }
+                                  Navigator.of(context).pop(null);
+                                  showImage();
                                 });
                               });
                             },
@@ -398,16 +398,15 @@ class _ImageViewState extends State<ImageView> {
                         context,
                         ImageEditor(imagePath: imagePath, psw: widget.psw),
                       ).then((path) {
+                        delloading = false;
                         if (path != null) {
                           widget.paths.insert(widget.index + 1, path as String);
-                          setState(() {
-                            widget.index += 1;
-                            delloading = false;
-                            _pageController =
-                                PageController(initialPage: widget.index);
-                            showImage();
-                          });
+                          widget.index += 1;
+                          _pageController =
+                              PageController(initialPage: widget.index);
+                          showImage();
                         }
+                        setState(() {});
                       });
                     },
                     icon: const Icon(Icons.photo_size_select_large_outlined),
