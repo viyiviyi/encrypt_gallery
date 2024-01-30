@@ -29,8 +29,9 @@ Future<LoadResult> loadImageProvider(LoadArg config) async {
   if (_history[config.path] != null) return _history[config.path]!;
   Future<LoadResult> future;
   if (_loadImageProviderCache[config.path] != null) {
-    future = _loadImageProviderQueue
-        .inAdvance(_loadImageProviderCache[config.path]!);
+    return _loadImageProviderCache[config.path]!;
+    // future = _loadImageProviderQueue
+    //     .inAdvance(_loadImageProviderCache[config.path]!);
   } else {
     future = _loadImageProviderQueue.add(() {
       return compute(_loadImageProvider, config).then((result) {
@@ -102,10 +103,10 @@ Future<img.Image?> loadImage(LoadArg config) async {
   var eFile = File('$dir/dencrypt_output/$fileName');
 
   if (eFile.existsSync()) {
-    return img.decodePngFile(eFile.absolute.path);
+    return img.decodeImageFile(eFile.absolute.path);
   }
 
-  var image = await img.decodePngFile(file.absolute.path);
+  var image = await img.decodeImageFile(file.absolute.path);
   if (image == null) {
     if (kDebugMode) {
       print('文件 ${config.path} 读取失败');

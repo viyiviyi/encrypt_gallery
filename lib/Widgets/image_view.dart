@@ -21,13 +21,15 @@ class ImageView extends StatefulWidget {
   late int index;
   final String psw;
   Function(int idx)? onDeleteItem;
-  ImageView(
-      {Key? key,
-      required this.paths,
-      required this.index,
-      required this.psw,
-      this.onDeleteItem})
-      : super(key: key);
+  Function(int idx, String path)? onAdd;
+  ImageView({
+    Key? key,
+    required this.paths,
+    required this.index,
+    required this.psw,
+    this.onDeleteItem,
+    this.onAdd,
+  }) : super(key: key);
 
   @override
   _ImageViewState createState() => _ImageViewState();
@@ -476,6 +478,9 @@ class _ImageViewState extends State<ImageView> {
                     delloading = false;
                     if (path != null) {
                       widget.paths.insert(widget.index + 1, path as String);
+                      if (widget.onAdd != null) {
+                        widget.onAdd!(widget.index + 1, path);
+                      }
                       widget.index += 1;
                       showImage();
                     }

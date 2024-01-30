@@ -26,11 +26,12 @@ class _EnImagePageState extends State<EnImagePage> {
   late PhotoViewControllerBase<PhotoViewControllerValue> controller;
   showImage() async {
     var cachePath = await getTempDir();
-    loadImageProvider(LoadArg(
-            path: widget.imagePath,
-            pwd: widget.psw,
-            cachePath: cachePath.absolute.path))
-        .then((result) {
+    loadImageProvider(
+      LoadArg(
+          path: widget.imagePath,
+          pwd: widget.psw,
+          cachePath: cachePath.absolute.path),
+    ).then((result) {
       if (result.imageProvider != null) {
         setState(() {
           data = result.imageProvider;
@@ -44,7 +45,7 @@ class _EnImagePageState extends State<EnImagePage> {
     if (imgFile.existsSync()) {
       try {
         setState(() {
-          // thumbnail = FileImage(imgFile);
+          thumbnail = FileImage(imgFile);
         });
         return;
       } catch (e) {

@@ -293,9 +293,12 @@ class _ImageListState extends State<ImageList> {
                               onDeleteItem: (idx) {
                                 imageFiles.removeAt(idx).delete();
                               },
+                              onAdd: (idx, path) {
+                                imageFiles.insert(idx, File(path));
+                              },
                             )).then(
                           (value) {
-                            loadImages();
+                            setState(() {});
                           },
                         );
                       },
