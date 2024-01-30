@@ -66,8 +66,12 @@ class _ImageEditorState extends State<ImageEditor> {
         break;
       }
     }
-    compute(saveUint8ListImage,
-            SaveUint8ListImageArgs(savePath: savePath, data: image))
+    compute(
+            saveUint8ListImage,
+            SaveUint8ListImageArgs(
+                savePath: savePath,
+                data: image,
+                psw: widget.hasEncrypt ? widget.psw : null))
         .then((value) => Navigator.pop(context, savePath));
   }
 

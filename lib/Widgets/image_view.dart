@@ -5,10 +5,11 @@ import 'package:encrypt_gallery/Widgets/common/image_editor.dart';
 import 'package:encrypt_gallery/Widgets/common/image_info.dart';
 import 'package:encrypt_gallery/Widgets/common/image_page.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
-import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:encrypt_gallery/core/image_utils.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
@@ -184,16 +185,15 @@ class _ImageViewState extends State<ImageView> {
                                   .then((result) {
                                 var image = result.image;
                                 if (image == null) return;
-                                Future.value(() {
-                                  if (image.textData?['Dencrypt'] == 'true') {
-                                    return encryptImage(image, dir.psw);
-                                  }
-                                  return image;
-                                }).then((imageVal) {
-                                  var eImg = imageVal();
-                                  if (eImg == null) return;
-                                  File('${dir.rootPath}/$fileName')
-                                      .writeAsBytesSync(img.encodePng(eImg));
+                                compute(
+                                  saveImageToFile,
+                                  SaveImageArgs(
+                                      savePath: '${dir.rootPath}/$fileName',
+                                      image: image,
+                                      psw: image.textData?['Dencrypt'] == 'true'
+                                          ? dir.psw
+                                          : null),
+                                ).then((value) {
                                   if (move) {
                                     if (widget.onDeleteItem != null) {
                                       widget.onDeleteItem!(widget.index);
@@ -381,124 +381,135 @@ class _ImageViewState extends State<ImageView> {
               ),
             ),
           ),
-          Visibility(
-            visible: showActions,
-            child: Positioned(
-              bottom: 20,
-              width: MediaQuery.of(context).size.width,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        delloading = true;
-                      });
-                      navigatorPage(
-                        context,
-                        ImageEditor(imagePath: imagePath, psw: widget.psw),
-                      ).then((path) {
-                        delloading = false;
-                        if (path != null) {
-                          widget.paths.insert(widget.index + 1, path as String);
-                          widget.index += 1;
-                          _pageController =
-                              PageController(initialPage: widget.index);
-                          showImage();
-                        }
-                        setState(() {});
-                      });
-                    },
-                    icon: const Icon(Icons.photo_size_select_large_outlined),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      moveImage(true);
-                    },
-                    icon: const Icon(Icons.move_to_inbox_outlined),
-                  ),
-                  ...(Platform.isWindows || Platform.isLinux
-                      ? [
-                          IconButton(
-                            onPressed: () {
-                              saveImage();
-                            },
-                            icon: const Icon(Icons.save_as_outlined),
-                          )
-                        ]
-                      : []),
-                  IconButton(
-                    onPressed: () {
-                      delImage();
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Visibility(
-            visible: showActions,
-            child: Positioned(
-              top: Platform.isAndroid || Platform.isIOS ? 30 : 0,
-              left: 0,
-              height: 50,
-              width: MediaQuery.of(context).size.width,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.arrow_back_outlined)),
-                  Expanded(
-                    flex: 1,
-                    child: Text(
-                      '${widget.index + 1}/${widget.paths.length} $fileName',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (String value) {
-                      switch (value) {
-                        case '1':
-                          showInfoModal(context);
-                          break;
-                        case '2':
-                          saveImage();
-                          break;
-                        case '3':
-                          delImage();
-                          break;
-                        default:
-                      }
-                    },
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: '1',
-                        child: Text('查看图片信息'),
-                      ),
-                      ...(Platform.isWindows || Platform.isLinux
-                          ? [
-                              const PopupMenuItem<String>(
-                                value: '2',
-                                child: Text('保存图片'),
-                              )
-                            ]
-                          : []),
-                      const PopupMenuItem<String>(
-                        value: '3',
-                        child: Text('删除'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          )
+          renderTopbar(),
+          renderBottonbar(),
         ],
+      ),
+    );
+  }
+
+  Widget renderTopbar() {
+    return Visibility(
+      visible: showActions,
+      child: Positioned(
+        top: Platform.isAndroid || Platform.isIOS ? 30 : 0,
+        left: 0,
+        height: 50,
+        width: MediaQuery.of(context).size.width,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back_outlined)),
+            Expanded(
+              flex: 1,
+              child: Text(
+                '${widget.index + 1}/${widget.paths.length} $fileName',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            PopupMenuButton<String>(
+              onSelected: (String value) {
+                switch (value) {
+                  case '1':
+                    showInfoModal(context);
+                    break;
+                  case '2':
+                    saveImage();
+                    break;
+                  case '3':
+                    delImage();
+                    break;
+                  default:
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: '1',
+                  child: Text('查看图片信息'),
+                ),
+                ...(Platform.isWindows || Platform.isLinux
+                    ? [
+                        const PopupMenuItem<String>(
+                          value: '2',
+                          child: Text('保存图片'),
+                        )
+                      ]
+                    : []),
+                const PopupMenuItem<String>(
+                  value: '3',
+                  child: Text('删除'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget renderBottonbar() {
+    return Visibility(
+      visible: showActions,
+      child: Positioned(
+        bottom: 20,
+        width: MediaQuery.of(context).size.width,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  delloading = true;
+                });
+                loadImageProvider(LoadArg(
+                  path: imagePath,
+                  pwd: widget.psw,
+                )).then((result) {
+                  navigatorPage(
+                    context,
+                    ImageEditor(imagePath: imagePath, psw: widget.psw),
+                  ).then((path) {
+                    delloading = false;
+                    if (path != null) {
+                      widget.paths.insert(widget.index + 1, path as String);
+                      widget.index += 1;
+                      showImage();
+                    }
+                    _pageController = PageController(initialPage: widget.index);
+                    setState(() {});
+                  });
+                });
+              },
+              icon: const Icon(Icons.photo_size_select_large_outlined),
+            ),
+            IconButton(
+              onPressed: () {
+                moveImage(true);
+              },
+              icon: const Icon(Icons.move_to_inbox_outlined),
+            ),
+            ...(Platform.isWindows || Platform.isLinux
+                ? [
+                    IconButton(
+                      onPressed: () {
+                        saveImage();
+                      },
+                      icon: const Icon(Icons.save_as_outlined),
+                    )
+                  ]
+                : []),
+            IconButton(
+              onPressed: () {
+                delImage();
+              },
+              icon: const Icon(Icons.delete_outline_rounded),
+            ),
+          ],
+        ),
       ),
     );
   }

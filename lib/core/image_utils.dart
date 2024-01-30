@@ -15,7 +15,7 @@ class SaveImageArgs {
   });
 }
 
-void saveImage(SaveImageArgs args) {
+void saveImageToFile(SaveImageArgs args) {
   var im = args.image;
   if (args.psw != null) {
     im = encryptImage(im, args.psw!) ?? im;
