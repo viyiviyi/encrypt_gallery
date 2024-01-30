@@ -123,7 +123,7 @@ class _ImageViewState extends State<ImageView> {
   void loadNext(int currentIndex, int nextIndex) {
     getTempDir().then((cachePath) {
       var d = currentIndex < nextIndex ? 1 : -1;
-      for (var i = 0; i < 5; i += d) {
+      for (var i = 0; i < 5; i++) {
         // 预加载后面几张图片
         var idx = currentIndex + (i + 1) * d;
         if (d > 0 && idx >= widget.paths.length) {

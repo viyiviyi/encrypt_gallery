@@ -21,34 +21,32 @@ class LoadResult {
   LoadResult([this.image, this.imageProvider]);
 }
 
-FutureQueue _loadImageProviderQueue = FutureQueue();
+FutureQueue<LoadResult> _loadImageProviderQueue = FutureQueue();
 Map<String, Future<LoadResult>> _loadImageProviderCache = {}; // 临时保存，防止多次发起请求
 Map<String, LoadResult> _history = {};
 List<String> _historyKey = [];
 Future<LoadResult> loadImageProvider(LoadArg config) async {
   if (_history[config.path] != null) return _history[config.path]!;
+  Future<LoadResult> future;
   if (_loadImageProviderCache[config.path] != null) {
-    if (_loadImageProviderQueue
-        .isRuning(_loadImageProviderCache[config.path]!)) {
-      return await _loadImageProviderCache[config.path]!;
-    } else {
-      _loadImageProviderQueue.dispose(_loadImageProviderCache[config.path]!);
-    }
+    future = _loadImageProviderQueue
+        .inAdvance(_loadImageProviderCache[config.path]!);
+  } else {
+    future = _loadImageProviderQueue.add(() {
+      return compute(_loadImageProvider, config).then((result) {
+        _history[config.path] = result;
+        if (_historyKey.length > 100) {
+          _history.remove(_historyKey.removeAt(0));
+        }
+        return result;
+      });
+    });
   }
-  var future = _loadImageProviderQueue.add<LoadResult>((completer) async {
-    if (completer.isCompleted) return;
-    var result = await compute(_loadImageProvider, config);
-    if (completer.isCompleted) return;
-    _history[config.path] = result;
-    if (_historyKey.length > 100) {
-      _history.remove(_historyKey.removeAt(0));
-    }
-    completer.complete(result);
-  });
-  future
-      .whenComplete(() => _loadImageProviderCache.remove(config.path)); // 完成时删除
+  if (_loadImageProviderCache[config.path] != future) {
+    future.whenComplete(() => _loadImageProviderCache.remove(config.path));
+  }
   _loadImageProviderCache[config.path] = future;
-  return _loadImageProviderCache[config.path]!;
+  return future;
 }
 
 // 丢弃一个请求，用于在组件被销毁时
@@ -59,8 +57,8 @@ void loadImageProviderDisable(String imagePath) {
   }
 }
 
-LoadResult _loadImageProvider(LoadArg config) {
-  var image = loadImage(config);
+Future<LoadResult> _loadImageProvider(LoadArg config) async {
+  var image = await loadImage(config);
   if (image == null) {
     return LoadResult();
   }
@@ -89,7 +87,7 @@ Uint8List imgToUint8List(img.Image image) {
 }
 
 // 加载图片Image对象
-img.Image? loadImage(LoadArg config) {
+Future<img.Image?> loadImage(LoadArg config) async {
   File file = File(config.path);
   if (!file.existsSync()) {
     if (kDebugMode) {
@@ -104,11 +102,10 @@ img.Image? loadImage(LoadArg config) {
   var eFile = File('$dir/dencrypt_output/$fileName');
 
   if (eFile.existsSync()) {
-    var image = img.decodeImage(eFile.readAsBytesSync());
-    return image;
+    return img.decodePngFile(eFile.absolute.path);
   }
 
-  var image = img.decodeImage(file.readAsBytesSync());
+  var image = await img.decodePngFile(file.absolute.path);
   if (image == null) {
     if (kDebugMode) {
       print('文件 ${config.path} 读取失败');
@@ -144,13 +141,12 @@ Future dencryptAllImage(Map<String, String> config) async {
     var fileName = getPathName(file.absolute.path);
     var outputPath = '${outputDir.path}/$fileName';
     if (File(outputPath).existsSync()) continue;
-    queue.add((completer) async {
-      await compute(_denctyptImage, {
+    queue.add(() async {
+      return await compute(_denctyptImage, {
         'imagePath': file.path,
         'password': password,
         'savePath': outputPath
       });
-      completer.complete();
     });
   }
   return queue.awaitAll();
@@ -182,13 +178,12 @@ Future encryptAllImage(Map<String, String> config) async {
         file.path.substring(file.path.lastIndexOf(RegExp(r'/|\\')) + 1);
     var outputPath = '${outputDir.path}/$fileName';
     if (File(outputPath).existsSync()) continue;
-    queue.add((completer) async {
-      await compute(_enctyptImage, {
+    queue.add(() async {
+      return await compute(_enctyptImage, {
         'imagePath': file.path,
         'password': password,
         'savePath': outputPath
       });
-      completer.complete();
     });
   }
   return queue.awaitAll();

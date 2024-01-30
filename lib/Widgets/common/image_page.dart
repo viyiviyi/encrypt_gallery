@@ -44,7 +44,7 @@ class _EnImagePageState extends State<EnImagePage> {
     if (imgFile.existsSync()) {
       try {
         setState(() {
-          thumbnail = FileImage(imgFile);
+          // thumbnail = FileImage(imgFile);
         });
         return;
       } catch (e) {

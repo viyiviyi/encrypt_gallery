@@ -38,32 +38,6 @@ List<T> shuffleArr<T>(List<T> arr, String key) {
   return arr;
 }
 
-List<List<T>> encryptImageV2<T>(List<List<T>> arr, String psw) {
-  int width = arr[0].length;
-  int height = arr.length;
-  List<int> xArr = List.generate(width, (index) => index);
-  shuffleArr(xArr, psw);
-  List<int> yArr = List.generate(height, (index) => index);
-  shuffleArr(yArr, getSha256(psw));
-
-  for (int y = 0; y < height; y++) {
-    var _y = yArr[y];
-    var temp = arr[y];
-    arr[y] = arr[_y];
-    arr[_y] = temp;
-  }
-  for (int y = 0; y < height; y++) {
-    var row = arr[y];
-    for (int x = 0; x < width; x++) {
-      var _x = xArr[x];
-      var temp = row[x];
-      row[x] = row[_x];
-      row[_x] = temp;
-    }
-  }
-  return arr;
-}
-
 List<List<T>> dencryptImageV2<T>(List<List<T>> arr, String psw) {
   int width = arr[0].length;
   int height = arr.length;
@@ -74,18 +48,18 @@ List<List<T>> dencryptImageV2<T>(List<List<T>> arr, String psw) {
 
   // 1920*1080 耗时10几毫秒
   for (int y = height - 1; y >= 0; y--) {
-    var _y = yArr[y];
+    var y0 = yArr[y];
     var temp = arr[y];
-    arr[y] = arr[_y];
-    arr[_y] = temp;
+    arr[y] = arr[y0];
+    arr[y0] = temp;
   }
   for (int y = height - 1; y >= 0; y--) {
     var row = arr[y];
     for (int x = width - 1; x >= 0; x--) {
-      var _x = xArr[x];
+      var x0 = xArr[x];
       var temp = row[x];
-      row[x] = row[_x];
-      row[_x] = temp;
+      row[x] = row[x0];
+      row[x0] = temp;
     }
   }
 
@@ -98,9 +72,25 @@ Image? encryptImage(Image image, String pwd) {
   if (image.textData == null ||
       !image.textData!.containsKey('Encrypt') ||
       image.textData?['Encrypt'] != 'pixel_shuffle_2') {
-    var imgArr = List.generate(
-        height, (y) => List.generate(width, (x) => image.getPixel(x, y)));
-    imgArr = encryptImageV2(imgArr, pwd);
+    List<int> xArr = List.generate(width, (index) => index);
+    shuffleArr(xArr, pwd);
+    List<int> yArr = List.generate(height, (index) => index);
+    shuffleArr(yArr, getSha256(pwd));
+    List<int> xArr0 = List.generate(width, (index) => index);
+    List<int> yArr0 = List.generate(height, (index) => index);
+
+    for (int y = 0; y < height; y++) {
+      var y0 = yArr[y];
+      var temp = yArr0[y];
+      yArr0[y] = yArr0[y0];
+      yArr0[y0] = temp;
+    }
+    for (int x = 0; x < width; x++) {
+      var x0 = xArr[x];
+      var temp = xArr0[x];
+      xArr0[x] = xArr0[x0];
+      xArr0[x0] = temp;
+    }
     var newImg = Image(
         width: width,
         height: height,
@@ -111,7 +101,7 @@ Image? encryptImage(Image image, String pwd) {
 
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
-        newImg.setPixel(x, y, imgArr[y][x]);
+        newImg.setPixel(x, y, image.getPixel(xArr0[x], yArr0[y]));
       }
     }
     if (newImg.textData == null) {
@@ -140,9 +130,26 @@ Image? dencryptImage(Image image, String pwd) {
       }
       return null;
     }
-    var imgArr = List.generate(
-        height, (y) => List.generate(width, (x) => image.getPixel(x, y)));
-    imgArr = dencryptImageV2(imgArr, pwd);
+
+    List<int> xArr = List.generate(width, (index) => index);
+    shuffleArr(xArr, pwd);
+    List<int> yArr = List.generate(height, (index) => index);
+    shuffleArr(yArr, getSha256(pwd));
+    List<int> xArr0 = List.generate(width, (index) => index);
+    List<int> yArr0 = List.generate(height, (index) => index);
+
+    for (int y = height - 1; y >= 0; y--) {
+      var y0 = yArr[y];
+      var temp = yArr0[y];
+      yArr0[y] = yArr0[y0];
+      yArr0[y0] = temp;
+    }
+    for (int x = width - 1; x >= 0; x--) {
+      var x0 = xArr[x];
+      var temp = xArr0[x];
+      xArr0[x] = xArr0[x0];
+      xArr0[x0] = temp;
+    }
     var newImg = Image(
         width: width,
         height: height,
@@ -153,7 +160,7 @@ Image? dencryptImage(Image image, String pwd) {
 
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
-        newImg.setPixel(x, y, imgArr[y][x]);
+        newImg.setPixel(x, y, image.getPixel(xArr0[x], yArr0[y]));
       }
     }
     newImg.textData?.remove('Encrypt');
