@@ -15,10 +15,14 @@ class SaveImageArgs {
   });
 }
 
+/// 请勿传入已经加密的图片
 void saveImageToFile(SaveImageArgs args) {
   var im = args.image;
   if (args.psw != null) {
     im = encryptImage(im, args.psw!) ?? im;
+  } else {
+    im.textData?.remove('Dencrypt');
+    im.textData?.remove('EncryptPwdSha');
   }
   File(args.savePath).writeAsBytesSync(img.encodePng(im));
 }

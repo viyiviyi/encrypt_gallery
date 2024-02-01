@@ -87,25 +87,27 @@ class _FileMgtModalState extends State<FileMgtModal> {
       if ((image?.textData?['Dencrypt'] == 'true') == encrypt) {
         if (isMove) {
           await File(widget.imagePath)
-              .rename('${dist.rootPath}/${widget.fileName}');
+              .rename('${dist.rootPath}/${widget.fileName}')
+              .then((value) => null);
           isDeleted = true;
         } else {
           await File(widget.imagePath)
-              .copy('${dist.rootPath}/${widget.fileName}');
+              .copy('${dist.rootPath}/${widget.fileName}')
+              .then((value) => null);
         }
+        return true;
       }
-    } else {
-      await compute(
-        saveImageToFile,
-        SaveImageArgs(
-            savePath: '${dist.rootPath}/${widget.fileName}',
-            image: image!,
-            psw: encrypt ? dist.psw : null),
-      );
-      if (isMove) {
-        await File(widget.imagePath).delete();
-        isDeleted = true;
-      }
+    }
+    await compute(
+      saveImageToFile,
+      SaveImageArgs(
+          savePath: '${dist.rootPath}/${widget.fileName}',
+          image: image!,
+          psw: encrypt ? dist.psw : null),
+    ).then((value) => null);
+    if (isMove) {
+      await File(widget.imagePath).delete();
+      isDeleted = true;
     }
     return true;
   }
@@ -141,70 +143,17 @@ class _FileMgtModalState extends State<FileMgtModal> {
                               return BottomSheet(
                                 onClosing: () {},
                                 builder: (context) {
-                                  return SizedBox(
-                                    width: double.maxFinite,
-                                    height: 140,
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          margin:
-                                              const EdgeInsets.only(bottom: 30),
-                                          child: CheckboxListTile(
-                                            value: encrypt,
-                                            title: const Text('加密保存'),
-                                            controlAffinity:
-                                                ListTileControlAffinity.leading,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                encrypt = value ?? true;
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              flex: 1,
-                                              child: InkWell(
-                                                child: const Center(
-                                                  child: Text('复制'),
-                                                ),
-                                                onTap: () {
-                                                  saveImage(false, dir)
-                                                      .then((value) {
-                                                    Navigator.pop(
-                                                        context, isDeleted);
-                                                    if (value == true) {
-                                                      Navigator.pop(
-                                                          context, isDeleted);
-                                                    }
-                                                  });
-                                                },
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: InkWell(
-                                                child: const Center(
-                                                  child: Text('移动'),
-                                                ),
-                                                onTap: () {
-                                                  saveImage(true, dir)
-                                                      .then((value) {
-                                                    Navigator.pop(
-                                                        context, isDeleted);
-                                                    if (value == true) {
-                                                      Navigator.pop(
-                                                          context, isDeleted);
-                                                    }
-                                                  });
-                                                },
-                                              ),
-                                            )
-                                          ],
-                                        )
-                                      ],
-                                    ),
+                                  return BottomModal(
+                                    initEncrypt: encrypt,
+                                    saveImage: (isMove, isEncrypt) {
+                                      encrypt = isEncrypt;
+                                      saveImage(isMove, dir).then((value) {
+                                        Navigator.pop(context, isDeleted);
+                                        if (value == true) {
+                                          Navigator.pop(context, isDeleted);
+                                        }
+                                      });
+                                    },
                                   );
                                 },
                               );
@@ -238,6 +187,83 @@ class _FileMgtModalState extends State<FileMgtModal> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class BottomModal extends StatefulWidget {
+  final bool initEncrypt;
+  final Function(bool isMove, bool isEncrypt) saveImage;
+  const BottomModal({
+    super.key,
+    required this.initEncrypt,
+    required this.saveImage,
+  });
+
+  @override
+  State<BottomModal> createState() => _BottomModalState();
+}
+
+class _BottomModalState extends State<BottomModal> {
+  bool encrypt = true;
+  @override
+  void initState() {
+    super.initState();
+    encrypt = widget.initEncrypt;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.maxFinite,
+      height: 140,
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            child: CheckboxListTile(
+              value: encrypt,
+              title: const Text('加密保存'),
+              controlAffinity: ListTileControlAffinity.leading,
+              onChanged: (value) {
+                setState(() {
+                  encrypt = value ?? true;
+                });
+              },
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: InkWell(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(10),
+                    child: const Text('复制'),
+                  ),
+                  onTap: () {
+                    widget.saveImage(false, encrypt);
+                  },
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: InkWell(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(10),
+                    child: const Text('移动'),
+                  ),
+                  onTap: () {
+                    widget.saveImage(true, encrypt);
+                  },
+                ),
+              )
+            ],
+          )
         ],
       ),
     );
