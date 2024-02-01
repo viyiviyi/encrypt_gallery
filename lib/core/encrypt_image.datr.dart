@@ -21,7 +21,7 @@ class LoadResult {
   LoadResult([this.image, this.imageProvider]);
 }
 
-FutureQueue<LoadResult> _loadImageProviderQueue = FutureQueue();
+FutureQueue<LoadResult> _loadImageProviderQueue = FutureQueue(3);
 // 临时保存，防止多次发起请求
 Map<String, List<Completer<LoadResult>>> _loadImageProviderCache = {};
 Map<String, Future<LoadResult>> _futureMap = {};
@@ -42,7 +42,7 @@ Completer<LoadResult> loadImageProvider(LoadArg config) {
     future = _loadImageProviderQueue.add(() {
       return compute(_loadImageProvider, config).then((result) {
         _history[config.path] = result;
-        if (_historyKey.length > 100) {
+        if (_historyKey.length > 2) {
           _history.remove(_historyKey.removeAt(0));
         }
         return result;

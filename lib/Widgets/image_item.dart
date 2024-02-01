@@ -65,6 +65,7 @@ class _ImageItemState extends State<ImageItem> {
         setState(() {
           _image = cache;
         });
+        return;
       } catch (e) {
         if (kDebugMode) {
           print('缩略图读取失败');

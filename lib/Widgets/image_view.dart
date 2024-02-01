@@ -1,18 +1,14 @@
 import 'dart:io';
-import 'dart:math';
 
+import 'package:encrypt_gallery/Widgets/common/file_mgt_modal.dart';
 import 'package:encrypt_gallery/Widgets/common/image_editor.dart';
 import 'package:encrypt_gallery/Widgets/common/image_info.dart';
 import 'package:encrypt_gallery/Widgets/common/image_page.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
-import 'package:encrypt_gallery/core/image_utils.dart';
-import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:image/image.dart' as img;
 import 'package:photo_view/photo_view_gallery.dart';
 
@@ -42,6 +38,7 @@ class _ImageViewState extends State<ImageView> {
   late PageController _pageController;
   bool showActions = true;
   var delloading = false;
+  img.Image? image;
   showImage() {
     setState(() {
       imagePath = widget.paths[widget.index];
@@ -64,7 +61,6 @@ class _ImageViewState extends State<ImageView> {
   }
 
   nextImage() {
-    loadNext(widget.index, widget.index + 1);
     widget.index += 1;
     if (widget.index >= widget.paths.length) {
       widget.index = 0;
@@ -76,7 +72,6 @@ class _ImageViewState extends State<ImageView> {
   }
 
   previousImage() {
-    loadNext(widget.index, widget.index - 1);
     widget.index -= 1;
     if (widget.index <= 0) {
       widget.index = widget.paths.length - 1;
@@ -124,142 +119,33 @@ class _ImageViewState extends State<ImageView> {
     });
   }
 
-  void loadNext(int currentIndex, int nextIndex) {
-    getTempDir().then((cachePath) {
-      var d = currentIndex < nextIndex ? 1 : -1;
-      for (var i = 0; i < 5; i++) {
-        // 预加载后面几张图片
-        var idx = currentIndex + (i + 1) * d;
-        if (d > 0 && idx >= widget.paths.length) {
-          return;
-        } else if (d < 0 && idx < 0) {
-          return;
-        }
-        var cPath = widget.paths[idx];
-        loadImageProvider(LoadArg(
-                path: cPath,
-                pwd: widget.psw,
-                cachePath: cachePath.absolute.path))
-            .future
-            .then((result) {});
-      }
-    });
-  }
-
   void moveImage(bool move) {
-    getAllImageDir().then((values) {
-      var dirs = values;
-      dirs.sort((l, r) => l.rootPath.compareTo(r.rootPath));
+    setState(() {
+      delloading = true;
+    });
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return BottomSheet(
+            onClosing: () {},
+            builder: (context) {
+              return FileMgtModal(
+                fileName: fileName,
+                imagePath: imagePath,
+                psw: widget.psw,
+              );
+            });
+      },
+    ).then((value) {
+      if (value == true) {
+        widget.paths.removeAt(widget.index);
+        widget.onDeleteItem?.call(widget.index);
+      }
       setState(() {
-        delloading = true;
+        showImage();
+        delloading = false;
+        _pageController = PageController(initialPage: widget.index);
       });
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('移动图片'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 500,
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: const Text('请选择目标目录，如果原图片已加密，将会使用目标目录的密码加密保存。'),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: ListView(
-                      children: [
-                        ...dirs.map((dir) {
-                          return GestureDetector(
-                            onTap: () {
-                              if (File('${dir.rootPath}/$fileName')
-                                  .existsSync()) {
-                                Navigator.pop(context);
-                                showToast('目标目录已存在同名文件，取消移动',
-                                    context: context,
-                                    axis: Axis.horizontal,
-                                    alignment: Alignment.center,
-                                    position: StyledToastPosition.center);
-                                return;
-                              }
-                              loadImageProvider(
-                                      LoadArg(path: imagePath, pwd: widget.psw))
-                                  .future
-                                  .then((result) {
-                                var image = result.image;
-                                if (image == null) return;
-                                compute(
-                                  saveImageToFile,
-                                  SaveImageArgs(
-                                      savePath: '${dir.rootPath}/$fileName',
-                                      image: image,
-                                      psw: image.textData?['Dencrypt'] == 'true'
-                                          ? dir.psw
-                                          : null),
-                                ).then((value) {
-                                  if (move) {
-                                    if (widget.onDeleteItem != null) {
-                                      widget.onDeleteItem!(widget.index);
-                                    }
-                                    loadNext(widget.index, widget.index + 1);
-                                    if (widget.paths.isEmpty) {
-                                      Navigator.of(context).pop(null);
-                                      return Navigator.of(context).pop(null);
-                                    }
-                                    widget.paths.removeAt(widget.index);
-                                    if (widget.index >= widget.paths.length) {
-                                      widget.index = 0;
-                                    }
-                                  }
-                                  Navigator.of(context).pop(null);
-                                  showImage();
-                                });
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(20),
-                              margin: const EdgeInsets.all(10),
-                              constraints: BoxConstraints(
-                                  minWidth: min(
-                                      MediaQuery.of(context).size.width, 300)),
-                              decoration: BoxDecoration(
-                                color: Colors.black87.withOpacity(.3),
-                                borderRadius: const BorderRadius.all(
-                                    Radius.circular(10)), // 设置圆角半径为10
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(dir.rootPath),
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(null);
-                  },
-                  child: const Text('取消'))
-            ],
-          );
-        },
-      ).then((value) => setState(() {
-            delloading = false;
-            _pageController = PageController(initialPage: widget.index);
-          }));
     });
   }
 
@@ -289,7 +175,6 @@ class _ImageViewState extends State<ImageView> {
                   Navigator.of(context).pop(null);
                   return Navigator.of(context).pop(null);
                 }
-                loadNext(widget.index, widget.index + 1);
                 if (widget.index >= widget.paths.length) widget.index = 0;
                 showImage();
                 Navigator.of(context).pop(null);
@@ -332,7 +217,6 @@ class _ImageViewState extends State<ImageView> {
                   itemCount: widget.paths.length,
                   allowImplicitScrolling: true,
                   onPageChanged: (index) {
-                    loadNext(widget.index, index);
                     widget.index = index;
                     showImage();
                   },

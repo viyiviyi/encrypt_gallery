@@ -56,6 +56,8 @@ class _ImageListState extends State<ImageList> {
 
   sortImages() {
     setState(() {
+      widget.imageDir.sortType = sortType;
+      createOrUpdateImageDir(widget.imageDir).then((value) => null);
       switch (sortType) {
         case FileSortType.name:
           imageFiles.sort(
@@ -141,6 +143,7 @@ class _ImageListState extends State<ImageList> {
   @override
   void initState() {
     super.initState();
+    sortType = widget.imageDir.sortType ?? sortType;
     loadImages();
   }
 
@@ -291,7 +294,8 @@ class _ImageListState extends State<ImageList> {
                               index: idx,
                               psw: widget.imageDir.psw,
                               onDeleteItem: (idx) {
-                                imageFiles.removeAt(idx).delete();
+                                var file = imageFiles.removeAt(idx);
+                                if (file.existsSync()) file.delete();
                               },
                               onAdd: (idx, path) {
                                 imageFiles.insert(idx, File(path));

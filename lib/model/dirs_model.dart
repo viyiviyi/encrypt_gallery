@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:encrypt/encrypt.dart';
 import 'package:encrypt_gallery/core/core.dart';
 import 'package:encrypt_gallery/core/hive_box.dart';
+import 'package:encrypt_gallery/model/file_sort_type.dart';
 import 'package:hive/hive.dart';
 
 class ImageDir {
@@ -10,6 +11,7 @@ class ImageDir {
   String psw;
   String? authUser;
   String? authPsw;
+  FileSortType? sortType;
   ImageDir({required this.rootPath, required this.psw});
 
   static ImageDir fromJson(dynamic data) {
@@ -17,6 +19,7 @@ class ImageDir {
     imageDir.authPsw =
         data['authPsw'] != null ? _dencode(data['authPsw']) : null;
     imageDir.authUser = data['authUser'];
+    imageDir.sortType = FileSortType.values[data['sortType'] ?? 0];
     return imageDir;
   }
 
@@ -46,6 +49,7 @@ class ImageDir {
       'psw': psw,
       'authUser': authUser,
       'authPsw': authPsw != null ? _encode(authPsw!) : '',
+      'sortType': sortType?.index ?? 0,
     };
   }
 
