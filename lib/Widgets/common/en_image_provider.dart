@@ -53,6 +53,7 @@ class DecryptedImage extends ImageProvider<DecryptedImage> {
       }
     });
     return loadImageProvider(LoadArg(path: imagePath, pwd: psw))
+        .future
         .then((result) async {
       if (result.image != null) {
         final Uint8List bytes = await compute(imgToUint8List, result.image!);

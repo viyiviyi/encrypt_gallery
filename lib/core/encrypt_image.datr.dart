@@ -22,17 +22,23 @@ class LoadResult {
 }
 
 FutureQueue<LoadResult> _loadImageProviderQueue = FutureQueue();
-Map<String, Future<LoadResult>> _loadImageProviderCache = {}; // 临时保存，防止多次发起请求
+// 临时保存，防止多次发起请求
+Map<String, List<Completer<LoadResult>>> _loadImageProviderCache = {};
+Map<String, Future<LoadResult>> _futureMap = {};
 Map<String, LoadResult> _history = {};
 List<String> _historyKey = [];
-Future<LoadResult> loadImageProvider(LoadArg config) async {
-  if (_history[config.path] != null) return _history[config.path]!;
+Completer<LoadResult> loadImageProvider(LoadArg config) {
+  Completer<LoadResult> completer = Completer<LoadResult>();
+  if (_history[config.path] != null) {
+    completer.complete(_history[config.path]);
+    return completer;
+  }
   Future<LoadResult> future;
   if (_loadImageProviderCache[config.path] != null) {
-    return _loadImageProviderCache[config.path]!;
-    // future = _loadImageProviderQueue
-    //     .inAdvance(_loadImageProviderCache[config.path]!);
+    _loadImageProviderCache[config.path]!.add(completer);
+    return completer;
   } else {
+    _loadImageProviderCache[config.path] = [completer];
     future = _loadImageProviderQueue.add(() {
       return compute(_loadImageProvider, config).then((result) {
         _history[config.path] = result;
@@ -42,18 +48,27 @@ Future<LoadResult> loadImageProvider(LoadArg config) async {
         return result;
       });
     });
+    _futureMap[config.path] = future;
+    future.then((value) {
+      _futureMap.remove(config.path);
+      _loadImageProviderCache.remove(config.path)?.forEach((completer) {
+        completer.complete(value);
+      });
+    });
   }
-  if (_loadImageProviderCache[config.path] != future) {
-    future.whenComplete(() => _loadImageProviderCache.remove(config.path));
-  }
-  _loadImageProviderCache[config.path] = future;
-  return future;
+  return completer;
 }
 
 // 丢弃一个请求，用于在组件被销毁时
-void loadImageProviderDisable(String imagePath) {
+void loadImageProviderDisable(
+    String imagePath, Completer<LoadResult> delCompleter) {
   if (_loadImageProviderCache[imagePath] != null) {
-    _loadImageProviderQueue.dispose(_loadImageProviderCache[imagePath]!);
+    var idx = _loadImageProviderCache[imagePath]!.indexOf(delCompleter);
+    var completer = _loadImageProviderCache[imagePath]!.removeAt(idx);
+    completer.completeError('disable');
+    if (_loadImageProviderCache[imagePath]!.isEmpty) {
+      _loadImageProviderQueue.dispose(_futureMap.remove(imagePath)!);
+    }
     _loadImageProviderCache.remove(imagePath);
   }
 }

@@ -50,7 +50,7 @@ class ImageItem extends StatefulWidget {
 class _ImageItemState extends State<ImageItem> {
   Image loading = Image.asset('images/load_image.png');
   Image? _image;
-
+  Completer<LoadResult>? _completer;
   String? fileName;
 
   Future initImage() async {
@@ -59,25 +59,23 @@ class _ImageItemState extends State<ImageItem> {
     var thumbnailPath =
         getThumbnailPath(cachePath.absolute.path, widget.path, widget.pwd);
     var imgFile = File(thumbnailPath);
-
     if (imgFile.existsSync()) {
       try {
         var cache = Image.file(imgFile);
         setState(() {
           _image = cache;
         });
-        return;
       } catch (e) {
         if (kDebugMode) {
           print('缩略图读取失败');
         }
       }
     }
-    var result = await loadImageProvider(LoadArg(
+    _completer = loadImageProvider(LoadArg(
         path: widget.path,
         pwd: widget.pwd,
         cachePath: cachePath.absolute.path));
-
+    var result = await _completer!.future;
     if (result.imageProvider == null) {
       setState(() {
         loading = Image.asset('images/error_image.png');
@@ -115,13 +113,11 @@ class _ImageItemState extends State<ImageItem> {
   void initState() {
     super.initState();
     initImage();
-    // Timer(const Duration(milliseconds: 50), () {
-    // });
   }
 
   @override
   void dispose() {
-    loadImageProviderDisable(widget.path);
+    if (_completer != null) loadImageProviderDisable(widget.path, _completer!);
     super.dispose();
   }
 

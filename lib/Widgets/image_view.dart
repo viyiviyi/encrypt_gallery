@@ -114,6 +114,7 @@ class _ImageViewState extends State<ImageView> {
         .then((path) {
       if (path != null) {
         loadImageProvider(LoadArg(path: imagePath, pwd: widget.psw))
+            .future
             .then((result) {
           var image = result.image;
           if (image == null) return;
@@ -139,6 +140,7 @@ class _ImageViewState extends State<ImageView> {
                 path: cPath,
                 pwd: widget.psw,
                 cachePath: cachePath.absolute.path))
+            .future
             .then((result) {});
       }
     });
@@ -184,6 +186,7 @@ class _ImageViewState extends State<ImageView> {
                               }
                               loadImageProvider(
                                       LoadArg(path: imagePath, pwd: widget.psw))
+                                  .future
                                   .then((result) {
                                 var image = result.image;
                                 if (image == null) return;
@@ -470,7 +473,7 @@ class _ImageViewState extends State<ImageView> {
                 loadImageProvider(LoadArg(
                   path: imagePath,
                   pwd: widget.psw,
-                )).then((result) {
+                )).future.then((result) {
                   navigatorPage(
                     context,
                     ImageEditor(imagePath: imagePath, psw: widget.psw),

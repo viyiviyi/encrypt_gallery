@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:encrypt_gallery/core/app_tool.dart';
@@ -22,16 +23,19 @@ class EnImagePage extends StatefulWidget {
 class _EnImagePageState extends State<EnImagePage> {
   ImageProvider? data;
   ImageProvider? thumbnail;
+  Completer<LoadResult>? _completer;
   int width = 0;
+
   late PhotoViewControllerBase<PhotoViewControllerValue> controller;
   showImage() async {
     var cachePath = await getTempDir();
-    loadImageProvider(
+    _completer = loadImageProvider(
       LoadArg(
           path: widget.imagePath,
           pwd: widget.psw,
           cachePath: cachePath.absolute.path),
-    ).then((result) {
+    );
+    _completer?.future.then((result) {
       if (result.imageProvider != null) {
         setState(() {
           data = result.imageProvider;
@@ -65,7 +69,9 @@ class _EnImagePageState extends State<EnImagePage> {
 
   @override
   void dispose() {
-    loadImageProviderDisable(widget.imagePath);
+    if (_completer != null) {
+      loadImageProviderDisable(widget.imagePath, _completer!);
+    }
     super.dispose();
   }
 

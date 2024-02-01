@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +17,7 @@ class EnImageInfo extends StatefulWidget {
 
 class _EnImageInfoState extends State<EnImageInfo> {
   Map<String, String> info = {};
+  Completer<LoadResult>? _completer;
   TextStyle contentTextStyle = const TextStyle(
       color: Colors.white54, fontSize: 16, fontWeight: FontWeight.normal);
   TextStyle titleTextStyle = const TextStyle(
@@ -22,8 +25,9 @@ class _EnImageInfoState extends State<EnImageInfo> {
   @override
   void initState() {
     super.initState();
-    loadImageProvider(LoadArg(path: widget.imagePath, pwd: widget.psw))
-        .then((result) {
+    _completer =
+        loadImageProvider(LoadArg(path: widget.imagePath, pwd: widget.psw));
+    _completer?.future.then((result) {
       var image = result.image;
       if (image == null) return;
       if (image.textData != null) {
@@ -41,6 +45,14 @@ class _EnImageInfoState extends State<EnImageInfo> {
       }
       setState(() {});
     });
+  }
+
+  @override
+  void dispose() {
+    if (_completer != null) {
+      loadImageProviderDisable(widget.imagePath, _completer!);
+    }
+    super.dispose();
   }
 
   @override

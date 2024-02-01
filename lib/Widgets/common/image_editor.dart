@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:crop_your_image/crop_your_image.dart';
@@ -28,14 +29,16 @@ class _ImageEditorState extends State<ImageEditor> {
   late int width;
   late int height;
   bool loading = false;
+  Completer<LoadResult>? _completer;
   @override
   void initState() {
     super.initState();
     _controller = CropController();
-    loadImageProvider(LoadArg(
+    _completer = loadImageProvider(LoadArg(
       path: widget.imagePath,
       pwd: widget.psw,
-    )).then((result) {
+    ));
+    _completer?.future.then((result) {
       if (result.image != null) {
         width = result.image!.width;
         height = result.image!.height;
@@ -47,6 +50,14 @@ class _ImageEditorState extends State<ImageEditor> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    if (_completer != null) {
+      loadImageProviderDisable(widget.imagePath, _completer!);
+    }
+    super.dispose();
   }
 
   void saveImage(Uint8List image) {
