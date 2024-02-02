@@ -43,7 +43,7 @@ class _ImageEditorState extends State<ImageEditor> {
         width = result.image!.width;
         height = result.image!.height;
         widget.hasEncrypt = result.image?.textData?['Dencrypt'] == 'true';
-        compute((image) => img.encodePng(image), result.image!).then((value) {
+        compute((image) => img.encodeBmp(image), result.image!).then((value) {
           setState(() {
             data = value;
           });
