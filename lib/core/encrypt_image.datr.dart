@@ -74,6 +74,7 @@ void loadImageProviderDisable(
 }
 
 Future<LoadResult> _loadImageProvider(LoadArg config) async {
+  var startTime = DateTime.now();
   var image = await loadImage(config);
   if (image == null) {
     return LoadResult();
@@ -95,6 +96,9 @@ Future<LoadResult> _loadImageProvider(LoadArg config) async {
     }).then((value) => null);
   }
   var provider = imageToImageProvider(image);
+  if (kDebugMode) {
+    print('loadimage: ${DateTime.now().difference(startTime).inMilliseconds}');
+  }
   return LoadResult(image, provider);
 }
 
@@ -137,7 +141,7 @@ Future<img.Image?> loadImage(LoadArg config) async {
 }
 
 ImageProvider imageToImageProvider(img.Image image) {
-  return MemoryImage(img.encodePng(image));
+  return MemoryImage(img.encodeBmp(image));
 }
 
 Future dencryptAllImage(Map<String, String> config) async {
