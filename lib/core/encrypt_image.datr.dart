@@ -41,16 +41,17 @@ Completer<LoadResult> loadImageProvider(LoadArg config) {
     _loadImageProviderCache[config.path] = [completer];
     future = _loadImageProviderQueue.add(() {
       return compute(_loadImageProvider, config).then((result) {
-        _history[config.path] = result;
-        if (_historyKey.length > 2) {
-          _history.remove(_historyKey.removeAt(0));
-        }
         return result;
       });
     });
     _futureMap[config.path] = future;
     future.then((value) {
       _futureMap.remove(config.path);
+      _history[config.path] = value;
+      _historyKey.add(config.path);
+      if (_historyKey.length > 5) {
+        _history.remove(_historyKey.removeAt(0));
+      }
       _loadImageProviderCache.remove(config.path)?.forEach((completer) {
         completer.complete(value);
       });

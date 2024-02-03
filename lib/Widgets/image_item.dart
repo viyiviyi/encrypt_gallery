@@ -61,7 +61,21 @@ class _ImageItemState extends State<ImageItem> {
     var imgFile = File(thumbnailPath);
     if (imgFile.existsSync()) {
       try {
-        var cache = Image.file(imgFile);
+        var cache = Image.file(
+          imgFile,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+          color: widget.color,
+          colorBlendMode: widget.colorBlendMode,
+          alignment: widget.alignment,
+          repeat: widget.repeat,
+          centerSlice: widget.centerSlice,
+          matchTextDirection: widget.matchTextDirection,
+          gaplessPlayback: widget.gaplessPlayback,
+          isAntiAlias: widget.isAntiAlias,
+          filterQuality: widget.filterQuality,
+        );
         setState(() {
           _image = cache;
         });

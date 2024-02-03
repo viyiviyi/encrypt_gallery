@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:encrypt_gallery/Widgets/common/modal_add_dir.dart';
+import 'package:encrypt_gallery/Widgets/image_item.dart';
 import 'package:encrypt_gallery/Widgets/image_list.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
+import 'package:encrypt_gallery/core/image_utils.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +19,7 @@ class Gallery extends StatefulWidget {
 
 class _GalleryState extends State<Gallery> {
   List<ImageDir> dirs = [];
+  bool showAvator = false;
 
   void initDirs() async {
     getAllImageDir().then((values) {
@@ -39,6 +43,17 @@ class _GalleryState extends State<Gallery> {
       appBar: AppBar(
         title: const Text('相册列表'),
         actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                showAvator = !showAvator;
+              });
+            },
+            icon: const Icon(Icons.photo_size_select_large_rounded),
+          ),
+          const SizedBox(
+            width: 15,
+          ),
           IconButton(
               onPressed: () {
                 showDialog(
@@ -109,13 +124,50 @@ class _GalleryState extends State<Gallery> {
                       ),
                     ],
                   ),
-                  child: Column(
+                  child: Flex(
+                    direction: Axis.horizontal,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(dir.rootPath),
-                      const SizedBox(
-                        height: 10,
+                      Visibility(
+                        visible: showAvator &&
+                            Directory(dir.rootPath)
+                                .listSync()
+                                .where((f) => pathIsImage(f.path))
+                                .isNotEmpty,
+                        child: Container(
+                          height: 80,
+                          width: 80,
+                          margin: const EdgeInsets.only(right: 10),
+                          child: ImageItem(
+                            height: 80,
+                            width: 80,
+                            path: Directory(dir.rootPath)
+                                .listSync()
+                                .where((f) => pathIsImage(f.path))
+                                .first
+                                .path,
+                            pwd: dir.psw,
+                          ),
+                        ),
                       ),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              getPathName(dir.rootPath),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(
+                              height: 8,
+                            ),
+                            Text(dir.rootPath)
+                          ],
+                        ),
+                      )
                     ],
                   ),
                 ),

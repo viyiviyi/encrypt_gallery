@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:encrypt_gallery/Widgets/common/grid_builder.dart';
 import 'package:encrypt_gallery/Widgets/image_item.dart';
 import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:encrypt_gallery/core/image_utils.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:encrypt_gallery/model/file_sort_type.dart';
 import 'package:encrypt_gallery/model/provider_status.dart';
@@ -43,7 +44,7 @@ class _ImageListState extends State<ImageList> {
     var dir = Directory(widget.imageDir.rootPath);
     if (await dir.exists()) {
       for (var value in dir.listSync()) {
-        if (RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(value.path)) {
+        if (pathIsImage(value.path)) {
           var stat = await value.stat();
           if (stat.type == FileSystemEntityType.file) {
             imageFiles.add(value);

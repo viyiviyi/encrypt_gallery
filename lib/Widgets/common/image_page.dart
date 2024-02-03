@@ -94,10 +94,14 @@ class _EnImagePageState extends State<EnImagePage> {
               onTapDown: (details) {
                 widget.onTap?.call();
               },
-              child: Center(
+              child: SizedBox(
+                height: 250,
                 child: Column(
                   children: [
-                    Image.asset('images/load_image.png'),
+                    Image.asset(
+                      'images/load_image.png',
+                      height: 200,
+                    ),
                     LoadingAnimationWidget.staggeredDotsWave(
                         color: Colors.white60, size: 50)
                   ],

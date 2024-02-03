@@ -42,3 +42,7 @@ void saveUint8ListImage(SaveUint8ListImageArgs args) {
   }
   File(args.savePath).writeAsBytesSync(img.encodePng(im));
 }
+
+bool pathIsImage(String path) {
+  return RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(path);
+}
