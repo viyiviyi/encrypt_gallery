@@ -152,8 +152,6 @@ ImageProvider imageToImageProvider(img.Image image) {
   return MemoryImage(img.encodeBmp(image));
 }
 
-int a = 1;
-
 Future dencryptAllImage(Map<String, String> config) async {
   var path = config['inputPath'];
   var outputPath = config['outputPath'];
@@ -163,7 +161,6 @@ Future dencryptAllImage(Map<String, String> config) async {
   var outputDir = Directory(outputPath);
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
-  a = 6;
   FutureQueue queue = FutureQueue(4);
   for (var file in dir.listSync()) {
     if (!RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(file.path)) continue;
@@ -177,7 +174,7 @@ Future dencryptAllImage(Map<String, String> config) async {
         'imagePath': file.path,
         'password': password,
         'savePath': outputPath
-      }).then((value) => print(a));
+      }).then((value) => null);
     });
   }
   return queue.awaitAll();
