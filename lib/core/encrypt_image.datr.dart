@@ -152,6 +152,8 @@ ImageProvider imageToImageProvider(img.Image image) {
   return MemoryImage(img.encodeBmp(image));
 }
 
+int a = 1;
+
 Future dencryptAllImage(Map<String, String> config) async {
   var path = config['inputPath'];
   var outputPath = config['outputPath'];
@@ -161,7 +163,8 @@ Future dencryptAllImage(Map<String, String> config) async {
   var outputDir = Directory(outputPath);
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
-  FutureQueue queue = FutureQueue(8);
+  a = 6;
+  FutureQueue queue = FutureQueue(4);
   for (var file in dir.listSync()) {
     if (!RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(file.path)) continue;
     var stat = file.statSync();
@@ -169,25 +172,24 @@ Future dencryptAllImage(Map<String, String> config) async {
     var fileName = getPathName(file.absolute.path);
     var outputPath = '${outputDir.path}/$fileName';
     if (File(outputPath).existsSync()) continue;
-    queue.add(() async {
-      return await compute(_denctyptImage, {
+    queue.add(() {
+      return compute(_denctyptImage, {
         'imagePath': file.path,
         'password': password,
         'savePath': outputPath
-      }).then((value) => null);
+      }).then((value) => print(a));
     });
   }
   return queue.awaitAll();
 }
 
 Future _denctyptImage(Map<String, String> input) async {
-  var image = await img.decodeImageFile(input['imagePath']!).catchError((err) {
-    return img
-        .decodePngFile(input['imagePath']!)
-        .then((value) => value)
-        .catchError((err) => null);
-  });
-  if (image == null) return;
+  var file = File(input['imagePath']!).readAsBytesSync();
+  var image = img.decodeImage(file);
+  if (image == null) {
+    image = img.decodePng(file);
+    if (image == null) return;
+  }
   image = dencryptImage(image, input['password']!);
   if (image == null) return;
   File(input['savePath']!).writeAsBytesSync(img.encodePng(image));
@@ -202,7 +204,7 @@ Future encryptAllImage(Map<String, String> config) async {
   var outputDir = Directory(outputPath);
   if (!dir.existsSync()) return;
   if (!outputDir.existsSync()) outputDir.createSync();
-  FutureQueue queue = FutureQueue(8);
+  FutureQueue queue = FutureQueue(4);
   for (var file in dir.listSync()) {
     if (!RegExp(r'(.png|.jpg|.jpeg|.webp)$').hasMatch(file.path)) continue;
     var stat = file.statSync();
@@ -211,8 +213,8 @@ Future encryptAllImage(Map<String, String> config) async {
         file.path.substring(file.path.lastIndexOf(RegExp(r'/|\\')) + 1);
     var outputPath = '${outputDir.path}/$fileName';
     if (File(outputPath).existsSync()) continue;
-    queue.add(() async {
-      return await compute(_enctyptImage, {
+    queue.add(() {
+      return compute(_enctyptImage, {
         'imagePath': file.path,
         'password': password,
         'savePath': outputPath
@@ -222,13 +224,13 @@ Future encryptAllImage(Map<String, String> config) async {
   return queue.awaitAll();
 }
 
-Future _enctyptImage(Map<String, String> input) async {
-  var image =
-      await img.decodePngFile(input['imagePath']!).catchError((err) => null);
+void _enctyptImage(Map<String, String> input) {
+  var file = File(input['imagePath']!).readAsBytesSync();
+  var image = img.decodePng(file);
   if (image == null) {
-    var im = await img.decodeImageFile(input['imagePath']!);
-    if (im == null) return;
-    image = img.decodePng(img.encodePng(im));
+    image = img.decodeImage(file);
+    if (image == null) return;
+    image = img.decodePng(img.encodePng(image));
     if (image == null) return;
   }
   image = encryptImage(image, input['password']!);

@@ -114,6 +114,10 @@ Image? encryptImage(Image image, String pwd) {
       newImg.textData!['EncryptPwdSha'] = getSha256('${pwd}Encrypt');
     }
     return newImg;
+  } else {
+    if (kDebugMode) {
+      print('已加密图片，无需加密');
+    }
   }
   return null;
 }
