@@ -219,6 +219,12 @@ class _ImageListState extends State<ImageList> {
                   openDirPlugin.openNativeDir(
                       path: '${widget.imageDir.rootPath}/encrypt_output');
                   break;
+                case '7':
+                  widget.imageDir.avatorPath = null;
+                  createOrUpdateImageDir(widget.imageDir).then((value) {
+                    setState(() {});
+                  });
+                  break;
                 default:
               }
             },
@@ -255,6 +261,14 @@ class _ImageListState extends State<ImageList> {
                       ),
                     ]
                   : [],
+              ...(widget.imageDir.avatorPath != null
+                  ? [
+                      const PopupMenuItem<String>(
+                        value: '7',
+                        child: Text('清除相册封面'),
+                      ),
+                    ]
+                  : [])
             ],
           ),
         ],
@@ -302,7 +316,7 @@ class _ImageListState extends State<ImageList> {
                                 imageFiles.insert(idx, File(path));
                               },
                               actions: [
-                                MapEntry('设为封面', (idx, path) {
+                                MapEntry('设为相册封面', (idx, path) {
                                   widget.imageDir.avatorPath = path;
                                   createOrUpdateImageDir(widget.imageDir);
                                 })

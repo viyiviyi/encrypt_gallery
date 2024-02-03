@@ -106,20 +106,20 @@ class _GalleryState extends State<Gallery> {
               return GestureDetector(
                 onLongPress: () {
                   var size = MediaQuery.of(context).size;
-                  print(size);
+                  if (dir.avatorPath == null) return;
                   showMenu(
                       context: context,
                       position: RelativeRect.fromSize(
                           Rect.fromCenter(
                               center: Offset(size.width / 2, size.height / 2),
                               width: 100,
-                              height: size.height / 2),
-                          const Size.fromWidth(100)),
+                              height: 100),
+                          size),
                       items: [
                         PopupMenuItem(
-                            child: TextButton(
-                          child: const Text('清除封面'),
-                          onPressed: () {
+                            child: InkWell(
+                          child: const Text('清除相册封面'),
+                          onTap: () {
                             dir.avatorPath = null;
                             createOrUpdateImageDir(dir).then((value) {
                               setState(() {});
