@@ -5,9 +5,9 @@ import 'package:encrypt_gallery/Widgets/common/modal_add_dir.dart';
 import 'package:encrypt_gallery/Widgets/image_item.dart';
 import 'package:encrypt_gallery/Widgets/image_list.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
-import 'package:encrypt_gallery/core/image_utils.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:flutter/material.dart';
+import 'package:icons_launcher/utils/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Gallery extends StatefulWidget {
@@ -19,6 +19,7 @@ class Gallery extends StatefulWidget {
 
 class _GalleryState extends State<Gallery> {
   List<ImageDir> dirs = [];
+  Map<ImageDir, String> avator = {};
   bool showAvator = false;
 
   void initDirs() async {
@@ -26,6 +27,15 @@ class _GalleryState extends State<Gallery> {
       setState(() {
         dirs = values;
         dirs.sort((l, r) => l.rootPath.compareTo(r.rootPath));
+        dirs.forEach((dir) {
+          if (dir.avatorPath == null) {
+            var ls = Directory(dir.rootPath)
+                .listSync()
+                .where((event) => isImageFile(event.path));
+            if (ls.isEmpty) return;
+            avator[dir] = ls.first.path;
+          }
+        });
       });
     });
   }
@@ -94,6 +104,30 @@ class _GalleryState extends State<Gallery> {
           children: [
             ...dirs.map((dir) {
               return GestureDetector(
+                onLongPress: () {
+                  var size = MediaQuery.of(context).size;
+                  print(size);
+                  showMenu(
+                      context: context,
+                      position: RelativeRect.fromSize(
+                          Rect.fromCenter(
+                              center: Offset(size.width / 2, size.height / 2),
+                              width: 100,
+                              height: size.height / 2),
+                          const Size.fromWidth(100)),
+                      items: [
+                        PopupMenuItem(
+                            child: TextButton(
+                          child: const Text('清除封面'),
+                          onPressed: () {
+                            dir.avatorPath = null;
+                            createOrUpdateImageDir(dir).then((value) {
+                              setState(() {});
+                            });
+                          },
+                        ))
+                      ]);
+                },
                 onTap: () {
                   navigatorPage(context, ImageList(dir))
                       .then((value) => initDirs());
@@ -107,9 +141,6 @@ class _GalleryState extends State<Gallery> {
                                       400)))
                               .floor()) -
                       20,
-                  // constraints: BoxConstraints(
-                  //   minWidth: min(MediaQuery.of(context).size.width, 400),
-                  // ),
                   decoration: BoxDecoration(
                     color: Colors.black87.withOpacity(.3),
                     borderRadius: const BorderRadius.all(
@@ -129,25 +160,19 @@ class _GalleryState extends State<Gallery> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Visibility(
-                        visible: showAvator &&
-                            Directory(dir.rootPath)
-                                .listSync()
-                                .where((f) => pathIsImage(f.path))
-                                .isNotEmpty,
+                        visible: showAvator || dir.avatorPath != null,
                         child: Container(
                           height: 80,
                           width: 80,
                           margin: const EdgeInsets.only(right: 10),
-                          child: ImageItem(
-                            height: 80,
-                            width: 80,
-                            path: Directory(dir.rootPath)
-                                .listSync()
-                                .where((f) => pathIsImage(f.path))
-                                .first
-                                .path,
-                            pwd: dir.psw,
-                          ),
+                          child: (dir.avatorPath ?? avator[dir]) != null
+                              ? ImageItem(
+                                  height: 80,
+                                  width: 80,
+                                  path: dir.avatorPath ?? avator[dir] ?? '',
+                                  pwd: dir.psw,
+                                )
+                              : null,
                         ),
                       ),
                       Expanded(

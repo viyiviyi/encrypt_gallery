@@ -47,8 +47,10 @@ Completer<LoadResult> loadImageProvider(LoadArg config) {
     _futureMap[config.path] = future;
     future.then((value) {
       _futureMap.remove(config.path);
-      _history[config.path] = value;
-      _historyKey.add(config.path);
+      if (value.image != null) {
+        _history[config.path] = value;
+        _historyKey.add(config.path);
+      }
       if (_historyKey.length > 5) {
         _history.remove(_historyKey.removeAt(0));
       }
@@ -126,7 +128,12 @@ Future<img.Image?> loadImage(LoadArg config) async {
     return img.decodeImageFile(eFile.absolute.path);
   }
 
-  var image = await img.decodeImageFile(file.absolute.path);
+  var image = await img.decodeImageFile(file.absolute.path).catchError((err) {
+    return img
+        .decodePngFile(file.absolute.path)
+        .then((value) => value)
+        .catchError((err) => null);
+  });
   if (image == null) {
     if (kDebugMode) {
       print('文件 ${config.path} 读取失败');
@@ -167,14 +174,19 @@ Future dencryptAllImage(Map<String, String> config) async {
         'imagePath': file.path,
         'password': password,
         'savePath': outputPath
-      });
+      }).then((value) => null);
     });
   }
   return queue.awaitAll();
 }
 
-void _denctyptImage(Map<String, String> input) {
-  var image = img.decodeImage(File(input['imagePath']!).readAsBytesSync());
+Future _denctyptImage(Map<String, String> input) async {
+  var image = await img.decodeImageFile(input['imagePath']!).catchError((err) {
+    return img
+        .decodePngFile(input['imagePath']!)
+        .then((value) => value)
+        .catchError((err) => null);
+  });
   if (image == null) return;
   image = dencryptImage(image, input['password']!);
   if (image == null) return;
@@ -204,15 +216,21 @@ Future encryptAllImage(Map<String, String> config) async {
         'imagePath': file.path,
         'password': password,
         'savePath': outputPath
-      });
+      }).then((value) => null);
     });
   }
   return queue.awaitAll();
 }
 
-void _enctyptImage(Map<String, String> input) {
-  var image = img.decodeImage(File(input['imagePath']!).readAsBytesSync());
-  if (image == null) return;
+Future _enctyptImage(Map<String, String> input) async {
+  var image =
+      await img.decodePngFile(input['imagePath']!).catchError((err) => null);
+  if (image == null) {
+    var im = await img.decodeImageFile(input['imagePath']!);
+    if (im == null) return;
+    image = img.decodePng(img.encodePng(im));
+    if (image == null) return;
+  }
   image = encryptImage(image, input['password']!);
   if (image == null) return;
   File(input['savePath']!).writeAsBytesSync(img.encodePng(image));

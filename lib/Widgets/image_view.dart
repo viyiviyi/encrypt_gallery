@@ -18,6 +18,7 @@ class ImageView extends StatefulWidget {
   final String psw;
   Function(int idx)? onDeleteItem;
   Function(int idx, String path)? onAdd;
+  List<MapEntry<String, Function(int idx, String path)>> actions = [];
   ImageView({
     Key? key,
     required this.paths,
@@ -25,6 +26,7 @@ class ImageView extends StatefulWidget {
     required this.psw,
     this.onDeleteItem,
     this.onAdd,
+    this.actions = const [],
   }) : super(key: key);
 
   @override
@@ -306,13 +308,12 @@ class _ImageViewState extends State<ImageView> {
                   case '1':
                     showInfoModal(context);
                     break;
-                  case '2':
-                    saveImage();
-                    break;
-                  case '3':
-                    delImage();
-                    break;
                   default:
+                    var ls =
+                        widget.actions.where((element) => element.key == value);
+                    if (ls.isNotEmpty) {
+                      ls.first.value(widget.index, imagePath);
+                    }
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -320,18 +321,10 @@ class _ImageViewState extends State<ImageView> {
                   value: '1',
                   child: Text('查看图片信息'),
                 ),
-                ...(Platform.isWindows || Platform.isLinux
-                    ? [
-                        const PopupMenuItem<String>(
-                          value: '2',
-                          child: Text('保存图片'),
-                        )
-                      ]
-                    : []),
-                const PopupMenuItem<String>(
-                  value: '3',
-                  child: Text('删除'),
-                ),
+                ...widget.actions.map((e) => PopupMenuItem<String>(
+                      value: e.key,
+                      child: Text(e.key),
+                    )),
               ],
             ),
           ],

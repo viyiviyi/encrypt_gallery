@@ -4,6 +4,7 @@ import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
 
 class EnImageInfo extends StatefulWidget {
   final String imagePath;
@@ -21,22 +22,29 @@ class _EnImageInfoState extends State<EnImageInfo> {
   TextStyle contentTextStyle = const TextStyle(
       color: Colors.white54, fontSize: 16, fontWeight: FontWeight.normal);
   TextStyle titleTextStyle = const TextStyle(
-      color: Colors.white70, fontSize: 18, fontWeight: FontWeight.normal);
+      color: Colors.white70, fontSize: 18, fontWeight: FontWeight.bold);
+  img.Image? image;
+
   @override
   void initState() {
     super.initState();
     _completer =
         loadImageProvider(LoadArg(path: widget.imagePath, pwd: widget.psw));
     _completer?.future.then((result) {
-      var image = result.image;
+      image = result.image;
       if (image == null) return;
-      if (image.textData != null) {
-        image.textData!.forEach((key, value) {
-          info[key] = value;
+      if (image!.textData != null) {
+        image!.textData!.forEach((key, value) {
+          if (key == 'EncryptPwdSha') {
+          } else if (key == 'Dencrypt' && value == 'true') {
+            info['是否加密'] = '是';
+          } else {
+            info[key] = value;
+          }
         });
       }
-      if (image.hasExif) {
-        image.exif.directories.forEach((key, value) {
+      if (image!.hasExif) {
+        image!.exif.directories.forEach((key, value) {
           if (info.containsKey(key)) {
             info[key] =
                 '${info[key]!}\n\n${value.data.values.map((e) => e.toString()).join('\n')}';
@@ -74,6 +82,22 @@ class _EnImageInfoState extends State<EnImageInfo> {
               )
             ],
           ),
+          Visibility(
+            visible: image != null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '大小: ',
+                  style: titleTextStyle,
+                ),
+                Text(
+                  '${image?.width} x ${image?.height}',
+                  style: contentTextStyle,
+                )
+              ],
+            ),
+          ),
           ...info.keys.map((key) {
             var value = info[key];
             return Column(
@@ -103,3 +127,45 @@ class _EnImageInfoState extends State<EnImageInfo> {
     );
   }
 }
+
+Map<String, String> checkInfo(MapEntry<String, String> input) {
+  var reg = RegExp('${infoKeys.join(':|')}:');
+  Map<String, String> map = {};
+  int i = 0;
+  String lastVal = '';
+  String lastKey = input.key;
+  while (true) {
+    if (input.value.startsWith(reg, i)) {
+      if (lastVal.isNotEmpty) {
+        map[lastKey] = lastVal;
+        lastVal = '';
+        // lastKey = input.value.substring(i,)
+      }
+    } else {
+      lastVal += input.value.substring(i, i + 1);
+    }
+
+    if (++i >= input.value.length) break;
+  }
+  return map;
+}
+
+const infoKeys = [
+  'Negative prompt',
+  'Steps',
+  'Sampler',
+  'CFG scale',
+  'Seed',
+  'Size',
+  'Model',
+  'Denoising strength',
+  'Clip skip',
+  'ENSD',
+  'Hires prompt',
+  'Hires upscale',
+  'Hires steps',
+  'Hires upscaler',
+  'SGM noise multiplier',
+  'VAE Encoder',
+  'Version'
+];

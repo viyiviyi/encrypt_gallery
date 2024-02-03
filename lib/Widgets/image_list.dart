@@ -301,6 +301,12 @@ class _ImageListState extends State<ImageList> {
                               onAdd: (idx, path) {
                                 imageFiles.insert(idx, File(path));
                               },
+                              actions: [
+                                MapEntry('设为封面', (idx, path) {
+                                  widget.imageDir.avatorPath = path;
+                                  createOrUpdateImageDir(widget.imageDir);
+                                })
+                              ],
                             )).then(
                           (value) {
                             setState(() {});

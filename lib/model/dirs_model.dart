@@ -11,6 +11,7 @@ class ImageDir {
   String psw;
   String? authUser;
   String? authPsw;
+  String? avatorPath;
   FileSortType? sortType;
   ImageDir({required this.rootPath, required this.psw});
 
@@ -20,6 +21,7 @@ class ImageDir {
         data['authPsw'] != null ? _dencode(data['authPsw']) : null;
     imageDir.authUser = data['authUser'];
     imageDir.sortType = FileSortType.values[data['sortType'] ?? 0];
+    imageDir.avatorPath = data['avatorPath'];
     return imageDir;
   }
 
@@ -50,6 +52,7 @@ class ImageDir {
       'authUser': authUser,
       'authPsw': authPsw != null ? _encode(authPsw!) : '',
       'sortType': sortType?.index ?? 0,
+      'avatorPath': avatorPath,
     };
   }
 
