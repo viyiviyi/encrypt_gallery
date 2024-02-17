@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:encrypt_gallery/core/consts.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'core.dart';
 
@@ -40,4 +42,13 @@ String getPathName(String path) {
 String getThumbnailPath(String cacheDir, String imagePath, String encryptPwd) {
   var cacheName = getSha256(imagePath + encryptPwd);
   return '$cacheDir/$cacheName';
+}
+
+final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+Future<bool> checkManageExternalStoragePermission() async {
+  if (!Platform.isAndroid) return true;
+  if (await deviceInfoPlugin.androidInfo
+          .then((value) => value.version.sdkInt) <=
+      29) return true;
+  return await Permission.manageExternalStorage.request().isGranted;
 }

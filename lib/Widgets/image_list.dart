@@ -14,7 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:open_dir/open_dir.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_tool.dart';
@@ -96,8 +95,8 @@ class _ImageListState extends State<ImageList> {
   }
 
   void dencodeAll(WorkStatus workStatus) {
-    Permission.manageExternalStorage.request().then((status) {
-      if (status.isGranted) {
+    checkManageExternalStoragePermission().then((status) {
+      if (status) {
         FilePicker.platform
             .getDirectoryPath(dialogTitle: '指定解密文件存放目录，请勿指定源目录。')
             .then((value) {
@@ -119,8 +118,8 @@ class _ImageListState extends State<ImageList> {
   }
 
   void encodeAll(WorkStatus workStatus) {
-    Permission.manageExternalStorage.request().then((status) {
-      if (status.isGranted) {
+    checkManageExternalStoragePermission().then((status) {
+      if (status) {
         FilePicker.platform
             .getDirectoryPath(dialogTitle: '指定加密文件存放目录，请勿指定源目录。')
             .then((value) {
