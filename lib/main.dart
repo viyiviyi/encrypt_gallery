@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:encrypt_gallery/core/hive_box.dart';
 import 'package:encrypt_gallery/model/provider_status.dart';
@@ -45,9 +46,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scrollBehavior: MyCustomScrollBehavior(),
       title: '图片解密',
       theme: ThemeData.dark(),
       home: const Gallery(),
     );
   }
+}
+
+class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  // Override behavior methods like buildOverscrollIndicator and buildScrollbar
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+      };
 }
