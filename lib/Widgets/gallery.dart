@@ -27,15 +27,16 @@ class _GalleryState extends State<Gallery> {
       setState(() {
         dirs = values;
         dirs.sort((l, r) => l.rootPath.compareTo(r.rootPath));
-        dirs.forEach((dir) {
+        for (var dir in dirs) {
+          if (!Directory(dir.rootPath).existsSync()) continue;
           if (dir.avatorPath == null) {
             var ls = Directory(dir.rootPath)
                 .listSync()
                 .where((event) => isImageFile(event.path));
-            if (ls.isEmpty) return;
+            if (ls.isEmpty) continue;
             avator[dir] = ls.first.path;
           }
-        });
+        }
       });
     });
   }
