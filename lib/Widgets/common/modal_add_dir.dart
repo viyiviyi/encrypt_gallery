@@ -70,8 +70,9 @@ class _AddDirModalState extends State<AddDirModal> {
                         widget.dir.rootPath = value ?? '';
                       });
                     });
-                  } else {}
-                  showToast('没有访问权限', context: context);
+                  } else {
+                    showToast('没有访问权限', context: context);
+                  }
                 });
               },
               child: const Text('选择目录'),
