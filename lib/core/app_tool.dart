@@ -46,8 +46,6 @@ String getThumbnailPath(String cacheDir, String imagePath, String encryptPwd) {
 
 final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
 Future<bool> checkManageExternalStoragePermission() async {
-  print(
-      await deviceInfoPlugin.androidInfo.then((value) => value.version.sdkInt));
   if (Platform.isAndroid &&
       await deviceInfoPlugin.androidInfo
               .then((value) => value.version.sdkInt) <=
