@@ -33,7 +33,7 @@ class _EnImageInfoState extends State<EnImageInfo> {
       if (result.textData != null) {
         result.textData!.forEach((key, value) {
           if (key == 'EncryptPwdSha') {
-          } else if (key == 'Encrypt' && value == 'pixel_shuffle_2') {
+          } else if (key == 'Encrypt' && value.startsWith('pixel_shuffle')) {
             info['是否加密'] = '是';
           } else {
             try {

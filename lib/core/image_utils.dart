@@ -19,9 +19,9 @@ class SaveImageArgs {
 void saveImageToFile(SaveImageArgs args) {
   var im = args.image;
   if (args.psw != null) {
-    im = encryptImage(im, args.psw!) ?? im;
+    im = encryptImageV3(im, args.psw!) ?? im;
   } else {
-    im.textData?.remove('Dencrypt');
+    im.textData?.remove('decrypt');
     im.textData?.remove('EncryptPwdSha');
   }
   File(args.savePath).writeAsBytesSync(img.encodePng(im));
@@ -38,7 +38,7 @@ class SaveUint8ListImageArgs {
 void saveUint8ListImage(SaveUint8ListImageArgs args) {
   var im = img.decodePng(args.data)!;
   if (args.psw != null) {
-    im = encryptImage(im, args.psw!) ?? im;
+    im = encryptImageV3(im, args.psw!) ?? im;
   }
   File(args.savePath).writeAsBytesSync(img.encodePng(im));
 }

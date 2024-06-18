@@ -94,8 +94,10 @@ Future<LoadResult> _loadImageProvider(LoadArg config) async {
       var thumbnailPath =
           getThumbnailPath(config.cachePath!, config.path, config.pwd);
       var imgFile = File(thumbnailPath);
-      imgFile.writeAsBytesSync(
-          img.encodeJpg(thumbnail, quality: 80, chroma: img.JpegChroma.yuv420));
+      if (!kDebugMode) {
+        imgFile.writeAsBytesSync(img.encodeJpg(thumbnail,
+            quality: 80, chroma: img.JpegChroma.yuv420));
+      }
     }).then((value) => null);
   }
   var provider = imageToImageProvider(image);
@@ -118,11 +120,11 @@ Future<img.Image?> loadImage(LoadArg config) async {
     }
     return null;
   }
-  // dencrypt_output 是解密后的文件保存目录
+  // decrypt_output 是解密后的文件保存目录
   var lIdx = config.path.lastIndexOf(RegExp(r'/|\\'));
   var fileName = config.path.substring(lIdx + 1);
   var dir = config.path.substring(0, lIdx);
-  var eFile = File('$dir/dencrypt_output/$fileName');
+  var eFile = File('$dir/decrypt_output/$fileName');
 
   if (eFile.existsSync()) {
     return img.decodeImageFile(eFile.absolute.path);
@@ -141,7 +143,7 @@ Future<img.Image?> loadImage(LoadArg config) async {
     return null;
   }
   var startTime = DateTime.now();
-  image = dencryptImage(image, config.pwd) ?? image;
+  image = decryptImage(image, config.pwd) ?? image;
   if (kDebugMode) {
     print('encrypt: ${DateTime.now().difference(startTime).inMilliseconds}');
   }
@@ -152,7 +154,7 @@ ImageProvider imageToImageProvider(img.Image image) {
   return MemoryImage(img.encodeBmp(image));
 }
 
-Future dencryptAllImage(Map<String, String> config) async {
+Future decryptAllImage(Map<String, String> config) async {
   var path = config['inputPath'];
   var outputPath = config['outputPath'];
   var password = config['password'];
@@ -187,7 +189,7 @@ Future _denctyptImage(Map<String, String> input) async {
     image = img.decodePng(file);
     if (image == null) return;
   }
-  image = dencryptImage(image, input['password']!);
+  image = decryptImage(image, input['password']!);
   if (image == null) return;
   File(input['savePath']!).writeAsBytesSync(img.encodePng(image));
 }
@@ -230,7 +232,7 @@ void _enctyptImage(Map<String, String> input) {
     image = img.decodePng(img.encodePng(image));
     if (image == null) return;
   }
-  image = encryptImage(image, input['password']!);
+  image = encryptImageV3(image, input['password']!);
   if (image == null) return;
   File(input['savePath']!).writeAsBytesSync(img.encodePng(image));
 }

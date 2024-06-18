@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:encrypt_gallery/core/app_tool.dart';
-import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:encrypt_gallery/core/encrypt_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -59,7 +59,7 @@ class _ImageItemState extends State<ImageItem> {
     var thumbnailPath =
         getThumbnailPath(cachePath.absolute.path, widget.path, widget.pwd);
     var imgFile = File(thumbnailPath);
-    if (imgFile.existsSync()) {
+    if (!kDebugMode && imgFile.existsSync()) {
       try {
         var cache = Image.file(
           imgFile,

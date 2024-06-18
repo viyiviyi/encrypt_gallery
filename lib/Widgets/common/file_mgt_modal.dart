@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:encrypt_gallery/core/encrypt_image.dart';
 import 'package:encrypt_gallery/core/image_utils.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:flutter/foundation.dart';
@@ -42,7 +42,7 @@ class _FileMgtModalState extends State<FileMgtModal> {
     completer?.future.then((result) {
       setState(() {
         image = result.image;
-        encrypt = result.image?.textData?['Dencrypt'] == 'true';
+        encrypt = result.image?.textData?['decrypt'] == 'true';
       });
       getAllImageDir().then((values) {
         setState(() {
@@ -84,7 +84,7 @@ class _FileMgtModalState extends State<FileMgtModal> {
       return false;
     }
     if (dist.psw == widget.psw) {
-      if ((image?.textData?['Dencrypt'] == 'true') == encrypt) {
+      if ((image?.textData?['decrypt'] == 'true') == encrypt) {
         if (isMove) {
           await File(widget.imagePath)
               .rename('${dist.rootPath}/${widget.fileName}')

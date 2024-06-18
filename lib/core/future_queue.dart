@@ -81,6 +81,7 @@ class FutureQueue<T> {
       }
     }
     if (_runningCount >= max || _queue.isEmpty) return;
+
     _runningCount++;
     final fun = _queue.removeAt(0);
     Future.sync(() => fun()).then((value) {

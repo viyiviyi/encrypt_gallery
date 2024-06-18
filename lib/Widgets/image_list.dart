@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:encrypt_gallery/Widgets/common/grid_builder.dart';
 import 'package:encrypt_gallery/Widgets/image_item.dart';
-import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:encrypt_gallery/core/encrypt_image.dart';
 import 'package:encrypt_gallery/core/image_utils.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
 import 'package:encrypt_gallery/model/file_sort_type.dart';
@@ -102,7 +102,7 @@ class _ImageListState extends State<ImageList> {
             .then((value) {
           if (value != null && value != '/' && value != '') {
             workStatus.setDencodeIng(true);
-            compute(dencryptAllImage, {
+            compute(decryptAllImage, {
               'inputPath': widget.imageDir.rootPath,
               'outputPath': value,
               'password': widget.imageDir.psw,
@@ -207,7 +207,7 @@ class _ImageListState extends State<ImageList> {
                 case '4':
                   final openDirPlugin = OpenDir();
                   openDirPlugin.openNativeDir(
-                      path: '${widget.imageDir.rootPath}/dencrypt_output');
+                      path: '${widget.imageDir.rootPath}/decrypt_output');
                   break;
                 case '5':
                   if (workStats.encodeIng) return;

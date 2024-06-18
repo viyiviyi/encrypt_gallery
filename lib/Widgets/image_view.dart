@@ -5,7 +5,7 @@ import 'package:encrypt_gallery/Widgets/common/image_editor.dart';
 import 'package:encrypt_gallery/Widgets/common/image_info.dart';
 import 'package:encrypt_gallery/Widgets/common/image_page.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
-import 'package:encrypt_gallery/core/encrypt_image.datr.dart';
+import 'package:encrypt_gallery/core/encrypt_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
