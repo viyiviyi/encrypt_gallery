@@ -65,7 +65,9 @@ class _AddDirModalState extends State<AddDirModal> {
               onPressed: () {
                 checkManageExternalStoragePermission().then((status) {
                   if (status) {
-                    FilePicker.platform.getDirectoryPath().then((value) {
+                    FilePicker.platform
+                        .getDirectoryPath(dialogTitle: '选择图片所在文件夹')
+                        .then((value) {
                       setState(() {
                         widget.dir.rootPath = value ?? '';
                       });
