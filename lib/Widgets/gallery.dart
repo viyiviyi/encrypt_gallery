@@ -5,9 +5,15 @@ import 'package:encrypt_gallery/Widgets/common/modal_add_dir.dart';
 import 'package:encrypt_gallery/Widgets/image_item.dart';
 import 'package:encrypt_gallery/Widgets/image_list.dart';
 import 'package:encrypt_gallery/core/app_tool.dart';
+import 'package:encrypt_gallery/core/encrypt_image.dart';
 import 'package:encrypt_gallery/model/dirs_model.dart';
+import 'package:encrypt_gallery/model/provider_status.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:icons_launcher/utils/utils.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Gallery extends StatefulWidget {
@@ -48,8 +54,37 @@ class _GalleryState extends State<Gallery> {
     initDirs();
   }
 
+  void dencodeAll(WorkStatus workStatus, String inputPath, String psw) {
+    if (workStatus.isRun(inputPath)) {
+      showToast('当前目录正在解密', context: context);
+      return;
+    }
+    checkManageExternalStoragePermission().then((status) {
+      if (status) {
+        FilePicker.platform
+            .getDirectoryPath(dialogTitle: '指定解密文件存放目录，请勿指定源目录。')
+            .then((value) {
+          if (value != null && value != '/' && value != '') {
+            workStatus.addPath(inputPath);
+            compute(decryptAllImage, {
+              'inputPath': inputPath,
+              'outputPath': value,
+              'password': psw,
+            }).then((value) {
+              workStatus.delPath(inputPath);
+            });
+          }
+        });
+      } else {
+        showToast('没有访问权限', context: context);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    var workStats = context.watch<WorkStatus>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('相册列表'),
@@ -75,6 +110,14 @@ class _GalleryState extends State<Gallery> {
                       title: const Text('新增文件夹'),
                       content: modal,
                       actions: <Widget>[
+                        TextButton(
+                          child: const Text('仅解密'),
+                          onPressed: () {
+                            dencodeAll(
+                                workStats, modal.dir.rootPath, modal.dir.psw);
+                            Navigator.of(context).pop();
+                          },
+                        ),
                         TextButton(
                           child: const Text('取消'),
                           onPressed: () => Navigator.of(context).pop(null),

@@ -242,10 +242,10 @@ class _ImageListState extends State<ImageList> {
                         value: '3',
                         child: Text('打开相册目录'),
                       ),
-                      const PopupMenuItem<String>(
-                        value: '4',
-                        child: Text('打开解密输出目录'),
-                      )
+                      // const PopupMenuItem<String>(
+                      //   value: '4',
+                      //   child: Text('打开解密输出目录'),
+                      // )
                     ]
                   : [],
               PopupMenuItem<String>(
@@ -254,10 +254,10 @@ class _ImageListState extends State<ImageList> {
               ),
               ...(Platform.isWindows || Platform.isLinux || Platform.isMacOS)
                   ? [
-                      const PopupMenuItem<String>(
-                        value: '6',
-                        child: Text('打开加密输出目录'),
-                      ),
+                      // const PopupMenuItem<String>(
+                      //   value: '6',
+                      //   child: Text('打开加密输出目录'),
+                      // ),
                     ]
                   : [],
               ...(widget.imageDir.avatorPath != null

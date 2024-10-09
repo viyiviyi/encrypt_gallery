@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:encrypt_gallery/core/hive_box.dart';
+import 'package:encrypt_gallery/model/backgound_tasks.dart';
 import 'package:encrypt_gallery/model/provider_status.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -33,6 +34,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => WorkStatus()),
+        ChangeNotifierProvider(create: (_) => BackgroundTask()),
       ],
       child: const MyApp(),
     ),
